@@ -1,7 +1,16 @@
 import { Mail, Lock } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { useAuthStore } from "@/store/auth-store";
 
 export default function LoginPage() {
+  const navigate = useNavigate();
+  const login = useAuthStore((s) => s.login);
+
+  function handleLogin() {
+    login();
+    navigate("/");
+  }
+
   return (
     <div className="px-4 pt-8 pb-10">
       <div className="mx-auto w-full max-w-[420px] rounded-[32px] bg-white px-8 py-8 shadow-[0_8px_30px_rgba(0,0,0,0.08)]">
@@ -41,19 +50,24 @@ export default function LoginPage() {
               placeholder="비밀번호"
               className="w-full bg-transparent text-[15px] text-[#5c4f55] outline-none placeholder:text-[#c6b7bc]"
             />
-            <button
-              type="button"
-              className="ml-3 shrink-0 text-sm font-medium text-[#d98997] hover:text-[#c96c7d]"
-            >
-              찾기
-            </button>
           </div>
+        </div>
+
+        {/* 비밀번호 찾기 */}
+        <div className="mb-2 text-right">
+          <Link
+            to="/forgot-password"
+            className="text-sm text-[#d98997] hover:text-[#c96c7d]"
+          >
+            비밀번호를 잊으셨나요?
+          </Link>
         </div>
 
         {/* 로그인 버튼 */}
         <button
           type="button"
-          className="mt-5 h-14 w-full rounded-2xl bg-[#f48b94] text-base font-semibold text-white shadow-[0_8px_20px_rgba(244,139,148,0.35)] transition hover:bg-[#ee7b86]"
+          onClick={handleLogin}
+          className="h-14 w-full rounded-2xl bg-[#f48b94] text-base font-semibold text-white shadow-[0_8px_20px_rgba(244,139,148,0.35)] transition hover:bg-[#ee7b86]"
         >
           로그인
         </button>

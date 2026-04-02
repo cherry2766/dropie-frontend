@@ -1,7 +1,9 @@
 import { Mail, Lock } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 export default function SignUpPage() {
+  const navigate = useNavigate();
+
   return (
     <div className="px-4 pt-8 pb-10">
       <div className="mx-auto w-full max-w-[420px] rounded-[32px] bg-white px-8 py-8 shadow-[0_8px_30px_rgba(0,0,0,0.08)]">
@@ -62,6 +64,7 @@ export default function SignUpPage() {
         {/* 회원가입 버튼 */}
         <button
           type="button"
+          onClick={() => navigate("/onboarding")}
           className="mt-5 h-14 w-full rounded-2xl bg-[#f48b94] text-base font-semibold text-white shadow-[0_8px_20px_rgba(244,139,148,0.35)] transition hover:bg-[#ee7b86]"
         >
           회원가입
