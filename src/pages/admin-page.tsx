@@ -1,34 +1,16 @@
 import { useState } from "react";
-import { Trash2, Pencil, Package, CalendarDays } from "lucide-react";
+import { Link } from "react-router-dom";
+import { Trash2, Pencil, Package, CalendarDays, Home } from "lucide-react";
+import type { EventStatus, EventEntity as Event, ProductEntity as Product } from "@/types";
 
+// Tab은 이 페이지 내부에서만 쓰는 UI 상태이므로 여기에 정의
 type Tab = "events" | "products";
-type EventStatus = "UPCOMING" | "OPEN" | "CLOSED";
-
-interface Event {
-  id: number;
-  brandName: string;
-  description: string;
-  thumbnailImageUrl: string;
-  imageUrl: string;
-  startAt: string;
-  endAt: string;
-  status: EventStatus;
-}
-
-interface Product {
-  id: number;
-  eventId: number;
-  name: string;
-  imageUrl: string;
-  description: string;
-  price: number;
-  stock: number;
-}
 
 const STATUS_STYLE: Record<EventStatus, string> = {
   OPEN: "bg-emerald-50 text-emerald-600",
   UPCOMING: "bg-blue-50 text-blue-600",
   CLOSED: "bg-[#ffd6e0] text-neutral-500",
+  FINISHED: "bg-neutral-100 text-neutral-400",
 };
 
 const INITIAL_EVENTS: Event[] = [
@@ -118,9 +100,18 @@ export default function AdminPage() {
     <div className="min-h-screen bg-neutral-100 p-6">
       <div className="mx-auto max-w-4xl">
         {/* 헤더 */}
-        <div className="mb-6 flex items-center gap-3">
-          <span className="text-2xl font-extrabold tracking-tight text-[#f48b94]">Dropie</span>
-          <span className="text-lg font-semibold text-neutral-500">관리자</span>
+        <div className="mb-6 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <span className="text-2xl font-extrabold tracking-tight text-[#f48b94]">Dropie</span>
+            <span className="text-lg font-semibold text-neutral-500">관리자</span>
+          </div>
+          <Link
+            to="/"
+            className="flex items-center gap-1.5 rounded-xl border border-neutral-200 bg-white px-3 py-2 text-sm font-medium text-neutral-500 shadow-sm transition hover:border-[#f4c9cf] hover:text-[#f48b94]"
+          >
+            <Home className="h-4 w-4" />
+            홈으로
+          </Link>
         </div>
 
         {/* 탭 */}

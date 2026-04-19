@@ -1,39 +1,29 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import {
-  Candy,
-  Cookie,
-  Milk,
-  Cherry,
-  Coffee,
-  Leaf,
-  Sandwich,
-  Cake,
-  Wheat,
-  Sparkles,
-} from "lucide-react";
-
-const TAGS = [
-  { id: "sweet", label: "달콤한", icon: Candy },
-  { id: "crispy", label: "바삭한", icon: Cookie },
-  { id: "creamy", label: "크리미한", icon: Milk },
-  { id: "fruit", label: "과일", icon: Cherry },
-  { id: "chocolate", label: "초콜릿", icon: Coffee },
-  { id: "greentea", label: "녹차", icon: Leaf },
-  { id: "bread", label: "빵류", icon: Sandwich },
-  { id: "donut", label: "도넛류", icon: Cake },
-  { id: "nutty", label: "고소한", icon: Wheat },
-  { id: "seasonal", label: "시즌한정", icon: Sparkles },
-];
+import { toast } from "sonner";
+import { useTagsData } from "@/hooks/queries/use-tags-data";
+import { useSavePreferences } from "@/hooks/mutations/preference/use-save-preferences";
+import { useSkipOnboarding } from "@/hooks/mutations/user/use-skip-onboarding";
+import { Spinner } from "@/components/ui/spinner";
 
 export default function OnboardingPage() {
-  const navigate = useNavigate();
-  const [selected, setSelected] = useState<string[]>([]);
+  const [selected, setSelected] = useState<number[]>([]);
 
-  function toggleTag(id: string) {
+  const { data: tags, isLoading: tagsLoading } = useTagsData();
+  const { mutate: savePreferences, isPending } = useSavePreferences();
+  const { mutate: skip, isPending: isSkipping } = useSkipOnboarding();
+
+  function toggleTag(id: number) {
     setSelected((prev) =>
-      prev.includes(id) ? prev.filter((t) => t !== id) : [...prev, id]
+      prev.includes(id) ? prev.filter((t) => t !== id) : [...prev, id],
     );
+  }
+
+  function handleSubmit() {
+    if (selected.length === 0) {
+      toast.error("최소 1개 이상 선택해주세요.");
+      return;
+    }
+    savePreferences(selected);
   }
 
   return (
@@ -44,9 +34,7 @@ export default function OnboardingPage() {
           <h1 className="text-[28px] font-extrabold tracking-[-0.02em] text-[#f48b94]">
             Droppie
           </h1>
-          <p className="mt-1 text-sm text-[#9f8f95]">
-            지금 인기 디저트를 확인해보세요
-          </p>
+          <p className="mt-1 text-sm text-[#9f8f95]">지금 인기 디저트를 확인해보세요</p>
         </div>
 
         {/* 타이틀 */}
@@ -60,44 +48,59 @@ export default function OnboardingPage() {
         </p>
 
         {/* 태그 목록 */}
-        <div className="grid grid-cols-2 gap-3">
-          {TAGS.map(({ id, label, icon: Icon }) => {
-            const isSelected = selected.includes(id);
-            return (
-              <button
-                key={id}
-                type="button"
-                onClick={() => toggleTag(id)}
-                className={`flex items-center gap-3 rounded-2xl border px-4 py-3 text-sm font-medium transition-all ${
-                  isSelected
-                    ? "border-[#f48b94] bg-[#fff0f3] text-[#f48b94]"
-                    : "border-[#f0e8ea] bg-[#fffafb] text-[#7a6b70] hover:border-[#f4c9cf]"
-                }`}
-              >
-                <Icon
-                  className={`h-5 w-5 shrink-0 ${isSelected ? "text-[#f48b94]" : "text-[#c6b7bc]"}`}
-                />
-                #{label}
-              </button>
-            );
-          })}
-        </div>
+        {tagsLoading ? (
+          <div className="flex justify-center py-8">
+            <Spinner className="h-6 w-6 border-[#f4c9cf] border-t-[#f48b94]" />
+          </div>
+        ) : (
+          <div className="grid grid-cols-2 gap-3">
+            {(tags ?? []).map(({ id, name }) => {
+              const isSelected = selected.includes(id);
+              return (
+                <button
+                  key={id}
+                  type="button"
+                  onClick={() => toggleTag(id)}
+                  className={`flex items-center justify-center rounded-2xl border px-4 py-3 text-sm font-medium transition-all ${
+                    isSelected
+                      ? "border-[#f48b94] bg-[#fff0f3] text-[#f48b94]"
+                      : "border-[#f0e8ea] bg-[#fffafb] text-[#7a6b70] hover:border-[#f4c9cf]"
+                  }`}
+                >
+                  {name}
+                </button>
+              );
+            })}
+          </div>
+        )}
 
         {/* 선택 카운트 */}
         <p className="mt-4 text-center text-xs text-[#b3a3a8]">
-          {selected.length > 0
-            ? `${selected.length}개 선택됨`
-            : "최소 1개 이상 선택해주세요"}
+          {selected.length > 0 ? `${selected.length}개 선택됨` : "최소 1개 이상 선택해주세요"}
         </p>
 
         {/* 시작하기 버튼 */}
         <button
           type="button"
-          disabled={selected.length === 0}
-          onClick={() => navigate("/")}
-          className="mt-4 h-14 w-full rounded-2xl bg-[#f48b94] text-base font-semibold text-white shadow-[0_8px_20px_rgba(244,139,148,0.35)] transition hover:bg-[#ee7b86] disabled:opacity-40 disabled:cursor-not-allowed"
+          disabled={isPending || tagsLoading}
+          onClick={handleSubmit}
+          className="mt-4 h-14 w-full rounded-2xl bg-[#f48b94] text-base font-semibold text-white shadow-[0_8px_20px_rgba(244,139,148,0.35)] transition hover:bg-[#ee7b86] disabled:cursor-not-allowed disabled:opacity-40"
         >
-          시작하기
+          {isPending ? (
+            <Spinner className="h-4 w-4 border-white/40 border-t-white" />
+          ) : (
+            "시작하기"
+          )}
+        </button>
+
+        {/* 건너뛰기 */}
+        <button
+          type="button"
+          disabled={isPending || isSkipping}
+          onClick={() => skip()}
+          className="mt-3 w-full text-sm text-[#b3a3a8] hover:text-[#9f8f95] disabled:pointer-events-none"
+        >
+          나중에 할게요
         </button>
       </div>
     </div>
