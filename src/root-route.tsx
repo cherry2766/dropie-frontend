@@ -13,6 +13,7 @@ import OrderPage from "@/pages/order-page";
 import SignUpPage from "@/pages/sign-up-page";
 import SignUpPendingPage from "@/pages/sign-up-pending-page";
 import VerifyEmailPage from "@/pages/verify-email-page";
+import ResetPasswordPage from "@/pages/reset-password-page";
 import { Navigate, Route, Routes } from "react-router-dom";
 
 export default function RootRoute() {
@@ -35,6 +36,7 @@ export default function RootRoute() {
           <Route path="/sign-up" element={<SignUpPage />} />
           <Route path="/sign-up-pending" element={<SignUpPendingPage />} />
           <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+          <Route path="/reset-password" element={<ResetPasswordPage />} />
         </Route>
 
         {/* 로그인 한 사용자만 */}
