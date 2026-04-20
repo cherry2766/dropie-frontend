@@ -2,6 +2,16 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import { Trash2, Pencil, Package, CalendarDays, Home } from "lucide-react";
 import type { EventStatus, EventEntity as Event, ProductEntity as Product } from "@/types";
+import { useImageUpload } from "@/hooks/use-image-upload";
+import { useCreateEvent } from "@/hooks/mutations/admin/use-create-event";
+import { useUpdateEvent } from "@/hooks/mutations/admin/use-update-event";
+import { useUpdateEventStatus } from "@/hooks/mutations/admin/use-update-event-status";
+import { useDeleteEvent } from "@/hooks/mutations/admin/use-delete-event";
+import { useCreateProduct } from "@/hooks/mutations/admin/use-create-product";
+import { useUpdateProduct } from "@/hooks/mutations/admin/use-update-product";
+import { useUpdateProductStock } from "@/hooks/mutations/admin/use-update-product-stock";
+import { useDeleteProduct } from "@/hooks/mutations/admin/use-delete-product";
+import { showSuccessToast } from "@/lib/toast";
 
 // Tab은 이 페이지 내부에서만 쓰는 UI 상태이므로 여기에 정의
 type Tab = "events" | "products";
@@ -28,6 +38,11 @@ const INITIAL_PRODUCTS: Product[] = [
 const EVENT_FORM_INIT = { brandName: "", description: "", thumbnailImageUrl: "", imageUrl: "", startAt: "", endAt: "", status: "UPCOMING" as EventStatus };
 const PRODUCT_FORM_INIT = { eventId: "", name: "", imageUrl: "", description: "", price: "", stock: "" };
 
+// datetime-local 인풋은 "YYYY-MM-DDTHH:mm", API는 초 단위까지 필요
+function toApiDatetime(value: string): string {
+  return value.length === 16 ? `${value}:00` : value;
+}
+
 export default function AdminPage() {
   const [tab, setTab] = useState<Tab>("events");
 
@@ -35,6 +50,7 @@ export default function AdminPage() {
   const [events, setEvents] = useState<Event[]>(INITIAL_EVENTS);
   const [eventForm, setEventForm] = useState(EVENT_FORM_INIT);
   const [editingEventId, setEditingEventId] = useState<number | null>(null);
+  const [originalEventStatus, setOriginalEventStatus] = useState<EventStatus | null>(null);
 
   // 상품
   const [products, setProducts] = useState<Product[]>(INITIAL_PRODUCTS);
@@ -43,38 +59,137 @@ export default function AdminPage() {
   const [editingStockId, setEditingStockId] = useState<number | null>(null);
   const [stockValue, setStockValue] = useState("");
 
+  // 이미지 업로드 (썸네일/상세 이미지 분리, 상품 이미지 별도)
+  const thumbnailUpload = useImageUpload();
+  const detailUpload = useImageUpload();
+  const productImageUpload = useImageUpload();
+
+  // 이벤트 mutations
+  const createEventMutation = useCreateEvent();
+  const updateEventMutation = useUpdateEvent();
+  const updateEventStatusMutation = useUpdateEventStatus();
+  const deleteEventMutation = useDeleteEvent();
+
+  // 상품 mutations
+  const createProductMutation = useCreateProduct();
+  const updateProductMutation = useUpdateProduct();
+  const updateProductStockMutation = useUpdateProductStock();
+  const deleteProductMutation = useDeleteProduct();
+
+  const isEventSubmitting =
+    createEventMutation.isPending ||
+    updateEventMutation.isPending ||
+    updateEventStatusMutation.isPending ||
+    thumbnailUpload.isUploading ||
+    detailUpload.isUploading;
+
+  const isProductSubmitting =
+    createProductMutation.isPending ||
+    updateProductMutation.isPending ||
+    productImageUpload.isUploading;
+
   // 이벤트 등록/수정
-  function handleEventSubmit() {
+  async function handleEventSubmit() {
     if (!eventForm.brandName || !eventForm.startAt || !eventForm.endAt) return;
-    if (editingEventId !== null) {
-      setEvents((prev) => prev.map((e) => e.id === editingEventId ? { ...e, ...eventForm } : e));
-      setEditingEventId(null);
-    } else {
-      setEvents((prev) => [...prev, { id: Date.now(), ...eventForm }]);
+    if (thumbnailUpload.isUploading || detailUpload.isUploading) return;
+
+    try {
+      if (editingEventId !== null) {
+        await updateEventMutation.mutateAsync({
+          eventId: editingEventId,
+          data: {
+            brandName: eventForm.brandName,
+            description: eventForm.description,
+            thumbnailImageUrl: eventForm.thumbnailImageUrl,
+            imageUrl: eventForm.imageUrl,
+            startAt: toApiDatetime(eventForm.startAt),
+            endAt: toApiDatetime(eventForm.endAt),
+          },
+        });
+        if (eventForm.status !== originalEventStatus) {
+          await updateEventStatusMutation.mutateAsync({
+            eventId: editingEventId,
+            status: eventForm.status,
+          });
+        }
+        setEvents((prev) => prev.map((e) => e.id === editingEventId ? { ...e, ...eventForm } : e));
+        setEditingEventId(null);
+        setOriginalEventStatus(null);
+        showSuccessToast("이벤트가 수정되었습니다.");
+      } else {
+        const res = await createEventMutation.mutateAsync({
+          brandName: eventForm.brandName,
+          description: eventForm.description,
+          thumbnailImageUrl: eventForm.thumbnailImageUrl,
+          imageUrl: eventForm.imageUrl,
+          startAt: toApiDatetime(eventForm.startAt),
+          endAt: toApiDatetime(eventForm.endAt),
+        });
+        setEvents((prev) => [...prev, { id: res.id, ...eventForm, status: res.status }]);
+        showSuccessToast("이벤트가 등록되었습니다.");
+      }
+      setEventForm(EVENT_FORM_INIT);
+      thumbnailUpload.reset();
+      detailUpload.reset();
+    } catch {
+      // 에러는 mutation의 onError에서 toast 처리
     }
-    setEventForm(EVENT_FORM_INIT);
   }
 
   function handleEditEvent(event: Event) {
     setEditingEventId(event.id);
+    setOriginalEventStatus(event.status);
     setEventForm({ brandName: event.brandName, description: event.description, thumbnailImageUrl: event.thumbnailImageUrl, imageUrl: event.imageUrl, startAt: event.startAt, endAt: event.endAt, status: event.status });
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
-  function handleDeleteEvent(id: number) {
-    setEvents((prev) => prev.filter((e) => e.id !== id));
+  async function handleDeleteEvent(id: number) {
+    try {
+      await deleteEventMutation.mutateAsync(id);
+      setEvents((prev) => prev.filter((e) => e.id !== id));
+      showSuccessToast("이벤트가 삭제되었습니다.");
+    } catch {
+      // 에러는 mutation의 onError에서 toast 처리
+    }
   }
 
   // 상품 등록/수정
-  function handleProductSubmit() {
+  async function handleProductSubmit() {
     if (!productForm.name || !productForm.eventId || !productForm.price) return;
-    if (editingProductId !== null) {
-      setProducts((prev) => prev.map((p) => p.id === editingProductId ? { ...p, ...productForm, eventId: Number(productForm.eventId), price: Number(productForm.price), stock: Number(productForm.stock) } : p));
-      setEditingProductId(null);
-    } else {
-      setProducts((prev) => [...prev, { id: Date.now(), eventId: Number(productForm.eventId), name: productForm.name, imageUrl: productForm.imageUrl, description: productForm.description, price: Number(productForm.price), stock: Number(productForm.stock) }]);
+    if (productImageUpload.isUploading) return;
+
+    try {
+      if (editingProductId !== null) {
+        await updateProductMutation.mutateAsync({
+          productId: editingProductId,
+          data: {
+            name: productForm.name,
+            imageUrl: productForm.imageUrl,
+            description: productForm.description,
+            price: Number(productForm.price),
+            stock: Number(productForm.stock),
+          },
+        });
+        setProducts((prev) => prev.map((p) => p.id === editingProductId ? { ...p, ...productForm, eventId: Number(productForm.eventId), price: Number(productForm.price), stock: Number(productForm.stock) } : p));
+        setEditingProductId(null);
+        showSuccessToast("상품이 수정되었습니다.");
+      } else {
+        const res = await createProductMutation.mutateAsync({
+          eventId: Number(productForm.eventId),
+          name: productForm.name,
+          imageUrl: productForm.imageUrl,
+          description: productForm.description,
+          price: Number(productForm.price),
+          stock: Number(productForm.stock),
+        });
+        setProducts((prev) => [...prev, { id: res.id, eventId: Number(productForm.eventId), name: productForm.name, imageUrl: productForm.imageUrl, description: productForm.description, price: Number(productForm.price), stock: res.stock }]);
+        showSuccessToast("상품이 등록되었습니다.");
+      }
+      setProductForm(PRODUCT_FORM_INIT);
+      productImageUpload.reset();
+    } catch {
+      // 에러는 mutation의 onError에서 toast 처리
     }
-    setProductForm(PRODUCT_FORM_INIT);
   }
 
   function handleEditProduct(product: Product) {
@@ -83,14 +198,26 @@ export default function AdminPage() {
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
-  function handleDeleteProduct(id: number) {
-    setProducts((prev) => prev.filter((p) => p.id !== id));
+  async function handleDeleteProduct(id: number) {
+    try {
+      await deleteProductMutation.mutateAsync(id);
+      setProducts((prev) => prev.filter((p) => p.id !== id));
+      showSuccessToast("상품이 삭제되었습니다.");
+    } catch {
+      // 에러는 mutation의 onError에서 toast 처리
+    }
   }
 
-  function handleStockSave(id: number) {
-    setProducts((prev) => prev.map((p) => p.id === id ? { ...p, stock: Number(stockValue) } : p));
-    setEditingStockId(null);
-    setStockValue("");
+  async function handleStockSave(id: number) {
+    try {
+      await updateProductStockMutation.mutateAsync({ productId: id, stock: Number(stockValue) });
+      setProducts((prev) => prev.map((p) => p.id === id ? { ...p, stock: Number(stockValue) } : p));
+      setEditingStockId(null);
+      setStockValue("");
+      showSuccessToast("재고가 수정되었습니다.");
+    } catch {
+      // 에러는 mutation의 onError에서 toast 처리
+    }
   }
 
   const inputCls = "h-10 w-full rounded-xl border border-neutral-200 bg-neutral-50 px-3 text-sm text-neutral-800 outline-none placeholder:text-neutral-400 focus:border-[#f48b94] focus:ring-1 focus:ring-[#f48b94]";
@@ -163,16 +290,48 @@ export default function AdminPage() {
                   <div>
                     <label className={labelCls}>썸네일 이미지</label>
                     <label className="flex h-20 cursor-pointer items-center justify-center rounded-xl border border-dashed border-neutral-300 bg-neutral-50 text-sm text-neutral-400 transition hover:border-[#f48b94] hover:text-[#f48b94]">
-                      {eventForm.thumbnailImageUrl ? <span className="text-xs text-neutral-600 truncate px-2">{eventForm.thumbnailImageUrl}</span> : "+ 이미지 업로드"}
-                      <input type="file" className="hidden" onChange={(e) => setEventForm((p) => ({ ...p, thumbnailImageUrl: e.target.files?.[0]?.name ?? "" }))} />
+                      {thumbnailUpload.isUploading
+                        ? <span className="text-xs text-neutral-400">업로드 중...</span>
+                        : eventForm.thumbnailImageUrl
+                          ? <span className="text-xs text-neutral-600 truncate px-2">{eventForm.thumbnailImageUrl}</span>
+                          : "+ 이미지 업로드"
+                      }
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        disabled={thumbnailUpload.isUploading}
+                        onChange={async (e) => {
+                          const file = e.target.files?.[0];
+                          if (!file) return;
+                          const url = await thumbnailUpload.upload(file);
+                          if (url) setEventForm((p) => ({ ...p, thumbnailImageUrl: url }));
+                        }}
+                      />
                     </label>
                     <p className="mt-1 text-xs text-neutral-400">목록 카드에 표시되는 이미지</p>
                   </div>
                   <div>
                     <label className={labelCls}>상세 이미지</label>
                     <label className="flex h-20 cursor-pointer items-center justify-center rounded-xl border border-dashed border-neutral-300 bg-neutral-50 text-sm text-neutral-400 transition hover:border-[#f48b94] hover:text-[#f48b94]">
-                      {eventForm.imageUrl ? <span className="text-xs text-neutral-600 truncate px-2">{eventForm.imageUrl}</span> : "+ 이미지 업로드"}
-                      <input type="file" className="hidden" onChange={(e) => setEventForm((p) => ({ ...p, imageUrl: e.target.files?.[0]?.name ?? "" }))} />
+                      {detailUpload.isUploading
+                        ? <span className="text-xs text-neutral-400">업로드 중...</span>
+                        : eventForm.imageUrl
+                          ? <span className="text-xs text-neutral-600 truncate px-2">{eventForm.imageUrl}</span>
+                          : "+ 이미지 업로드"
+                      }
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        disabled={detailUpload.isUploading}
+                        onChange={async (e) => {
+                          const file = e.target.files?.[0];
+                          if (!file) return;
+                          const url = await detailUpload.upload(file);
+                          if (url) setEventForm((p) => ({ ...p, imageUrl: url }));
+                        }}
+                      />
                     </label>
                     <p className="mt-1 text-xs text-neutral-400">이벤트 상세 페이지에 표시되는 이미지</p>
                   </div>
@@ -189,12 +348,19 @@ export default function AdminPage() {
                 </div>
                 <div className="flex justify-end gap-2">
                   {editingEventId !== null && (
-                    <button onClick={() => { setEditingEventId(null); setEventForm(EVENT_FORM_INIT); }} className="h-10 rounded-xl border border-neutral-200 px-5 text-sm font-semibold text-neutral-500 hover:bg-neutral-50">
+                    <button
+                      onClick={() => { setEditingEventId(null); setOriginalEventStatus(null); setEventForm(EVENT_FORM_INIT); thumbnailUpload.reset(); detailUpload.reset(); }}
+                      className="h-10 rounded-xl border border-neutral-200 px-5 text-sm font-semibold text-neutral-500 hover:bg-neutral-50"
+                    >
                       취소
                     </button>
                   )}
-                  <button onClick={handleEventSubmit} className="h-10 rounded-xl bg-[#f48b94] px-6 text-sm font-semibold text-white shadow-sm transition hover:bg-[#ee7b86]">
-                    {editingEventId !== null ? "수정 완료" : "이벤트 등록"}
+                  <button
+                    onClick={handleEventSubmit}
+                    disabled={isEventSubmitting}
+                    className="h-10 rounded-xl bg-[#f48b94] px-6 text-sm font-semibold text-white shadow-sm transition hover:bg-[#ee7b86] disabled:opacity-60 disabled:cursor-not-allowed"
+                  >
+                    {isEventSubmitting ? "처리 중..." : editingEventId !== null ? "수정 완료" : "이벤트 등록"}
                   </button>
                 </div>
               </div>
@@ -230,7 +396,11 @@ export default function AdminPage() {
                             <button onClick={() => handleEditEvent(event)} className="flex h-8 items-center gap-1 rounded-lg border border-neutral-200 px-3 text-xs font-medium text-neutral-600 hover:bg-neutral-50">
                               <Pencil className="h-3 w-3" /> 수정
                             </button>
-                            <button onClick={() => handleDeleteEvent(event.id)} className="flex h-8 items-center gap-1 rounded-lg border border-red-100 px-3 text-xs font-medium text-red-400 hover:bg-red-50">
+                            <button
+                              onClick={() => handleDeleteEvent(event.id)}
+                              disabled={deleteEventMutation.isPending}
+                              className="flex h-8 items-center gap-1 rounded-lg border border-red-100 px-3 text-xs font-medium text-red-400 hover:bg-red-50 disabled:opacity-60 disabled:cursor-not-allowed"
+                            >
                               <Trash2 className="h-3 w-3" /> 삭제
                             </button>
                           </div>
@@ -281,8 +451,24 @@ export default function AdminPage() {
                   <div>
                     <label className={labelCls}>상품 이미지</label>
                     <label className="flex h-10 cursor-pointer items-center justify-center rounded-xl border border-dashed border-neutral-300 bg-neutral-50 text-sm text-neutral-400 transition hover:border-[#f48b94] hover:text-[#f48b94]">
-                      {productForm.imageUrl ? <span className="text-xs text-neutral-600 truncate px-2">{productForm.imageUrl}</span> : "+ 이미지 업로드"}
-                      <input type="file" className="hidden" onChange={(e) => setProductForm((p) => ({ ...p, imageUrl: e.target.files?.[0]?.name ?? "" }))} />
+                      {productImageUpload.isUploading
+                        ? <span className="text-xs text-neutral-400">업로드 중...</span>
+                        : productForm.imageUrl
+                          ? <span className="text-xs text-neutral-600 truncate px-2">{productForm.imageUrl}</span>
+                          : "+ 이미지 업로드"
+                      }
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        disabled={productImageUpload.isUploading}
+                        onChange={async (e) => {
+                          const file = e.target.files?.[0];
+                          if (!file) return;
+                          const url = await productImageUpload.upload(file);
+                          if (url) setProductForm((p) => ({ ...p, imageUrl: url }));
+                        }}
+                      />
                     </label>
                   </div>
                 </div>
@@ -292,12 +478,19 @@ export default function AdminPage() {
                 </div>
                 <div className="flex justify-end gap-2">
                   {editingProductId !== null && (
-                    <button onClick={() => { setEditingProductId(null); setProductForm(PRODUCT_FORM_INIT); }} className="h-10 rounded-xl border border-neutral-200 px-5 text-sm font-semibold text-neutral-500 hover:bg-neutral-50">
+                    <button
+                      onClick={() => { setEditingProductId(null); setProductForm(PRODUCT_FORM_INIT); productImageUpload.reset(); }}
+                      className="h-10 rounded-xl border border-neutral-200 px-5 text-sm font-semibold text-neutral-500 hover:bg-neutral-50"
+                    >
                       취소
                     </button>
                   )}
-                  <button onClick={handleProductSubmit} className="h-10 rounded-xl bg-[#f48b94] px-6 text-sm font-semibold text-white shadow-sm transition hover:bg-[#ee7b86]">
-                    {editingProductId !== null ? "수정 완료" : "상품 등록"}
+                  <button
+                    onClick={handleProductSubmit}
+                    disabled={isProductSubmitting}
+                    className="h-10 rounded-xl bg-[#f48b94] px-6 text-sm font-semibold text-white shadow-sm transition hover:bg-[#ee7b86] disabled:opacity-60 disabled:cursor-not-allowed"
+                  >
+                    {isProductSubmitting ? "처리 중..." : editingProductId !== null ? "수정 완료" : "상품 등록"}
                   </button>
                 </div>
               </div>
@@ -333,7 +526,13 @@ export default function AdminPage() {
                             {editingStockId === product.id ? (
                               <div className="flex items-center gap-1">
                                 <input type="number" value={stockValue} onChange={(e) => setStockValue(e.target.value)} className="h-8 w-20 rounded-lg border border-[#f48b94] bg-neutral-50 px-2 text-sm outline-none" autoFocus />
-                                <button onClick={() => handleStockSave(product.id)} className="h-8 rounded-lg bg-[#f48b94] px-2 text-xs font-semibold text-white">저장</button>
+                                <button
+                                  onClick={() => handleStockSave(product.id)}
+                                  disabled={updateProductStockMutation.isPending}
+                                  className="h-8 rounded-lg bg-[#f48b94] px-2 text-xs font-semibold text-white disabled:opacity-60"
+                                >
+                                  {updateProductStockMutation.isPending ? "..." : "저장"}
+                                </button>
                                 <button onClick={() => setEditingStockId(null)} className="h-8 rounded-lg border border-neutral-200 px-2 text-xs text-neutral-500">취소</button>
                               </div>
                             ) : (
@@ -348,7 +547,11 @@ export default function AdminPage() {
                               <button onClick={() => { setEditingStockId(product.id); setStockValue(String(product.stock)); }} className="flex h-8 items-center gap-1 rounded-lg border border-blue-100 px-3 text-xs font-medium text-blue-500 hover:bg-blue-50">
                                 <Package className="h-3 w-3" /> 재고
                               </button>
-                              <button onClick={() => handleDeleteProduct(product.id)} className="flex h-8 items-center gap-1 rounded-lg border border-red-100 px-3 text-xs font-medium text-red-400 hover:bg-red-50">
+                              <button
+                                onClick={() => handleDeleteProduct(product.id)}
+                                disabled={deleteProductMutation.isPending}
+                                className="flex h-8 items-center gap-1 rounded-lg border border-red-100 px-3 text-xs font-medium text-red-400 hover:bg-red-50 disabled:opacity-60 disabled:cursor-not-allowed"
+                              >
                                 <Trash2 className="h-3 w-3" /> 삭제
                               </button>
                             </div>
