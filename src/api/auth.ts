@@ -42,3 +42,11 @@ export async function logoutApi(): Promise<void> {
 export async function resendVerification(email: string): Promise<void> {
   await api.post("/auth/resend-verification", { email });
 }
+
+export async function requestPasswordReset(email: string): Promise<void> {
+  await api.post("/auth/password-reset/request", { email });
+}
+
+export async function confirmPasswordReset(token: string, newPassword: string): Promise<void> {
+  await api.post("/auth/password-reset/confirm", { token, newPassword });
+}
