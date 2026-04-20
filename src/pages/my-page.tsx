@@ -1,6 +1,18 @@
 import { useState } from "react";
 import { User, MapPin, LogOut, Plus, X, Search, Package } from "lucide-react";
 import { useLogoutMutation } from "@/hooks/mutations/auth/use-logout";
+import { useWithdrawUser } from "@/hooks/mutations/user/use-withdraw-user";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import DaumPostcodeEmbed from "react-daum-postcode";
 
 type Tab = "orders" | "address";
@@ -44,6 +56,7 @@ const INITIAL_ADDRESSES = [
 
 export default function MyPage() {
   const { mutate: logout, isPending: isLoggingOut } = useLogoutMutation();
+  const { mutate: withdraw, isPending: isWithdrawing } = useWithdrawUser();
   const [tab, setTab] = useState<Tab>("orders");
   const [addresses, setAddresses] = useState(INITIAL_ADDRESSES);
   const [showForm, setShowForm] = useState(false);
@@ -284,6 +297,36 @@ export default function MyPage() {
           )}
         </div>
       )}
+
+      {/* 회원 탈퇴 */}
+      <div className="mt-10 border-t border-neutral-100 pt-6">
+        <AlertDialog>
+          <AlertDialogTrigger asChild>
+            <button className="text-xs text-neutral-400 underline underline-offset-2 hover:text-red-400 transition-colors">
+              회원 탈퇴
+            </button>
+          </AlertDialogTrigger>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>정말 탈퇴하시겠어요?</AlertDialogTitle>
+              <AlertDialogDescription>
+                탈퇴하면 계정 정보와 주문 내역을 더 이상 확인할 수 없어요.
+                이 작업은 되돌릴 수 없습니다.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>취소</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={() => withdraw()}
+                disabled={isWithdrawing}
+                className="bg-red-500 hover:bg-red-600 focus:ring-red-500 disabled:opacity-60"
+              >
+                {isWithdrawing ? "탈퇴 처리 중..." : "탈퇴하기"}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      </div>
 
       {/* 주소 검색 팝업 */}
       {showPostcode && (
