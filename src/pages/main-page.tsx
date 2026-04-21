@@ -1,6 +1,25 @@
+import { useNavigate } from "react-router-dom";
 import bannerImage from "@/assets/banner.png";
+import { useEventsData } from "@/hooks/queries/use-events-data";
+import type { EventStatus } from "@/types/event";
+
+const STATUS_LABEL: Record<EventStatus, string> = {
+  OPEN: "진행중",
+  UPCOMING: "오픈 예정",
+  CLOSED: "마감",
+  FINISHED: "종료",
+};
+
+const STATUS_STYLE: Record<EventStatus, string> = {
+  OPEN: "bg-[#fff0f3] text-[#f48b94]",
+  UPCOMING: "bg-blue-50 text-blue-500",
+  CLOSED: "bg-neutral-100 text-neutral-400",
+  FINISHED: "bg-neutral-100 text-neutral-400",
+};
 
 export default function MainPage() {
+  const navigate = useNavigate();
+  const { data, isLoading } = useEventsData();
   return (
     <div className="space-y-6">
       {/* 배너 (이미지만) */}
@@ -105,23 +124,42 @@ export default function MainPage() {
       </section>
 
       <section className="grid grid-cols-2 gap-x-3 gap-y-5">
-        {Array.from({ length: 6 }).map((_, index) => (
-          <article key={index} className="space-y-2">
-            <div className="overflow-hidden rounded-2xl bg-neutral-100">
-              <div className="aspect-[3/4] w-full bg-neutral-200" />
-            </div>
-
-            <div className="space-y-2 px-1">
-              <div className="h-4 w-20 rounded bg-neutral-200" />
-              <div className="space-y-1">
-                <div className="h-3 w-full rounded bg-neutral-200" />
-                <div className="h-3 w-4/5 rounded bg-neutral-200" />
-              </div>
-              <div className="h-7 w-16 rounded bg-neutral-300" />
-              <div className="h-3 w-24 rounded bg-neutral-200" />
-            </div>
-          </article>
-        ))}
+        {isLoading
+          ? Array.from({ length: 6 }).map((_, i) => (
+              <article key={i} className="space-y-2 animate-pulse">
+                <div className="aspect-[3/4] w-full rounded-2xl bg-neutral-200" />
+                <div className="space-y-2 px-1">
+                  <div className="h-4 w-20 rounded bg-neutral-200" />
+                  <div className="h-7 w-16 rounded bg-neutral-200" />
+                  <div className="h-3 w-24 rounded bg-neutral-200" />
+                </div>
+              </article>
+            ))
+          : (data?.content ?? []).map((event) => (
+              <article
+                key={event.id}
+                onClick={() => navigate(`/events/${event.id}`)}
+                className="cursor-pointer space-y-2"
+              >
+                <div className="overflow-hidden rounded-2xl bg-neutral-100">
+                  <img
+                    src={event.thumbnailImageUrl}
+                    alt={event.brandName}
+                    className="aspect-[3/4] w-full object-cover"
+                  />
+                </div>
+                <div className="space-y-1.5 px-1">
+                  <p className="text-sm font-bold text-neutral-900">{event.brandName}</p>
+                  <span className={`inline-block rounded-full px-2.5 py-0.5 text-xs font-semibold ${STATUS_STYLE[event.status]}`}>
+                    {STATUS_LABEL[event.status]}
+                  </span>
+                  <p className="text-xs text-neutral-400">
+                    {event.startAt.replace("T", " ").slice(0, 16)} ~
+                  </p>
+                </div>
+              </article>
+            ))
+        }
       </section>
     </div>
   );
