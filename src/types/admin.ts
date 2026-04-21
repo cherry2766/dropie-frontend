@@ -51,6 +51,19 @@ export type UpdateEventStatusResponse = {
   status: EventStatus;
 };
 
+// ── Admin List Items ───────────────────────────────────────────────────────
+
+export type AdminProductItem = {
+  id: number;
+  name: string;
+  eventId: number;
+  eventBrandName: string;
+  imageUrl: string;
+  description: string;
+  price: number;
+  stock: number;
+};
+
 // ── Product ────────────────────────────────────────────────────────────────
 
 export type CreateProductRequest = {
