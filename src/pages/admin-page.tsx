@@ -129,7 +129,7 @@ export default function AdminPage() {
   function handleEditEvent(event: Event) {
     setEditingEventId(event.id);
     setOriginalEventStatus(event.status);
-    setEventForm({ brandName: event.brandName, description: event.description, thumbnailImageUrl: event.thumbnailImageUrl, imageUrl: event.imageUrl, startAt: event.startAt, endAt: event.endAt, status: event.status });
+    setEventForm({ brandName: event.brandName, description: event.description, thumbnailImageUrl: event.thumbnailImageUrl, imageUrl: event.imageUrl, startAt: event.startAt.slice(0, 16), endAt: event.endAt.slice(0, 16), status: event.status });
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
@@ -156,8 +156,11 @@ export default function AdminPage() {
             imageUrl: productForm.imageUrl,
             description: productForm.description,
             price: Number(productForm.price),
-            stock: Number(productForm.stock),
           },
+        });
+        await updateProductStockMutation.mutateAsync({
+          productId: editingProductId,
+          stock: Number(productForm.stock),
         });
         setEditingProductId(null);
         showSuccessToast("상품이 수정되었습니다.");
