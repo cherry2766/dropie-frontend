@@ -35,11 +35,9 @@ export default function AddAddressModal({ isOpen, onClose, isFirstAddress }: Pro
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   function handleAddressSelect(data: any) {
-    setForm((prev) => ({
-      ...prev,
-      zipcode: data.zonecode,
-      address1: data.roadAddress || data.jibunAddress,
-    }));
+    const base = data.roadAddress || data.jibunAddress;
+    const address1 = data.buildingName ? `${base} (${data.buildingName})` : base;
+    setForm((prev) => ({ ...prev, zipcode: data.zonecode, address1 }));
     setShowPostcode(false);
   }
 
