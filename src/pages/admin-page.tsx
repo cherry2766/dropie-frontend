@@ -1,8 +1,11 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { Trash2, Pencil, Package, CalendarDays, Home } from "lucide-react";
-import type { EventStatus, EventEntity as Event, ProductEntity as Product } from "@/types";
+import type { EventStatus, EventEntity as Event } from "@/types";
+import type { AdminProductItem as Product } from "@/types/admin";
 import { useImageUpload } from "@/hooks/use-image-upload";
+import { useAdminEventsData } from "@/hooks/queries/use-admin-events-data";
+import { useAdminProductsData } from "@/hooks/queries/use-admin-products-data";
 import { useCreateEvent } from "@/hooks/mutations/admin/use-create-event";
 import { useUpdateEvent } from "@/hooks/mutations/admin/use-update-event";
 import { useUpdateEventStatus } from "@/hooks/mutations/admin/use-update-event-status";
@@ -23,18 +26,6 @@ const STATUS_STYLE: Record<EventStatus, string> = {
   FINISHED: "bg-neutral-100 text-neutral-400",
 };
 
-const INITIAL_EVENTS: Event[] = [
-  { id: 1, brandName: "노티드", description: "노티드 봄 시즌 한정 드롭", thumbnailImageUrl: "", imageUrl: "", startAt: "2026-04-01T20:00", endAt: "2026-04-01T22:00", status: "OPEN" },
-  { id: 2, brandName: "런던베이글뮤지엄", description: "런던베이글 신메뉴 드롭", thumbnailImageUrl: "", imageUrl: "", startAt: "2026-04-05T12:00", endAt: "2026-04-05T14:00", status: "UPCOMING" },
-  { id: 3, brandName: "카페노티드", description: "카페노티드 시즌 종료", thumbnailImageUrl: "", imageUrl: "", startAt: "2026-03-28T18:00", endAt: "2026-03-28T20:00", status: "CLOSED" },
-];
-
-const INITIAL_PRODUCTS: Product[] = [
-  { id: 1, eventId: 1, name: "초코두바이도넛", imageUrl: "", description: "진한 초콜릿 두바이 도넛", price: 5500, stock: 30 },
-  { id: 2, eventId: 1, name: "말차두바이도넛", imageUrl: "", description: "말차 크림 두바이 도넛", price: 5500, stock: 15 },
-  { id: 3, eventId: 2, name: "소금버터베이글", imageUrl: "", description: "고소한 소금버터 베이글", price: 4500, stock: 50 },
-];
-
 const EVENT_FORM_INIT = { brandName: "", description: "", thumbnailImageUrl: "", imageUrl: "", startAt: "", endAt: "", status: "UPCOMING" as EventStatus };
 const PRODUCT_FORM_INIT = { eventId: "", name: "", imageUrl: "", description: "", price: "", stock: "" };
 
@@ -47,13 +38,14 @@ export default function AdminPage() {
   const [tab, setTab] = useState<Tab>("events");
 
   // 이벤트
-  const [events, setEvents] = useState<Event[]>(INITIAL_EVENTS);
+  const { data: events = [] } = useAdminEventsData();
+  const { data: products = [] } = useAdminProductsData();
+
   const [eventForm, setEventForm] = useState(EVENT_FORM_INIT);
   const [editingEventId, setEditingEventId] = useState<number | null>(null);
   const [originalEventStatus, setOriginalEventStatus] = useState<EventStatus | null>(null);
 
   // 상품
-  const [products, setProducts] = useState<Product[]>(INITIAL_PRODUCTS);
   const [productForm, setProductForm] = useState(PRODUCT_FORM_INIT);
   const [editingProductId, setEditingProductId] = useState<number | null>(null);
   const [editingStockId, setEditingStockId] = useState<number | null>(null);
@@ -112,12 +104,11 @@ export default function AdminPage() {
             status: eventForm.status,
           });
         }
-        setEvents((prev) => prev.map((e) => e.id === editingEventId ? { ...e, ...eventForm } : e));
         setEditingEventId(null);
         setOriginalEventStatus(null);
         showSuccessToast("이벤트가 수정되었습니다.");
       } else {
-        const res = await createEventMutation.mutateAsync({
+        await createEventMutation.mutateAsync({
           brandName: eventForm.brandName,
           description: eventForm.description,
           thumbnailImageUrl: eventForm.thumbnailImageUrl,
@@ -125,7 +116,6 @@ export default function AdminPage() {
           startAt: toApiDatetime(eventForm.startAt),
           endAt: toApiDatetime(eventForm.endAt),
         });
-        setEvents((prev) => [...prev, { id: res.id, ...eventForm, status: res.status }]);
         showSuccessToast("이벤트가 등록되었습니다.");
       }
       setEventForm(EVENT_FORM_INIT);
@@ -146,7 +136,6 @@ export default function AdminPage() {
   async function handleDeleteEvent(id: number) {
     try {
       await deleteEventMutation.mutateAsync(id);
-      setEvents((prev) => prev.filter((e) => e.id !== id));
       showSuccessToast("이벤트가 삭제되었습니다.");
     } catch {
       // 에러는 mutation의 onError에서 toast 처리
@@ -170,11 +159,10 @@ export default function AdminPage() {
             stock: Number(productForm.stock),
           },
         });
-        setProducts((prev) => prev.map((p) => p.id === editingProductId ? { ...p, ...productForm, eventId: Number(productForm.eventId), price: Number(productForm.price), stock: Number(productForm.stock) } : p));
         setEditingProductId(null);
         showSuccessToast("상품이 수정되었습니다.");
       } else {
-        const res = await createProductMutation.mutateAsync({
+        await createProductMutation.mutateAsync({
           eventId: Number(productForm.eventId),
           name: productForm.name,
           imageUrl: productForm.imageUrl,
@@ -182,7 +170,6 @@ export default function AdminPage() {
           price: Number(productForm.price),
           stock: Number(productForm.stock),
         });
-        setProducts((prev) => [...prev, { id: res.id, eventId: Number(productForm.eventId), name: productForm.name, imageUrl: productForm.imageUrl, description: productForm.description, price: Number(productForm.price), stock: res.stock }]);
         showSuccessToast("상품이 등록되었습니다.");
       }
       setProductForm(PRODUCT_FORM_INIT);
@@ -201,7 +188,6 @@ export default function AdminPage() {
   async function handleDeleteProduct(id: number) {
     try {
       await deleteProductMutation.mutateAsync(id);
-      setProducts((prev) => prev.filter((p) => p.id !== id));
       showSuccessToast("상품이 삭제되었습니다.");
     } catch {
       // 에러는 mutation의 onError에서 toast 처리
@@ -211,7 +197,6 @@ export default function AdminPage() {
   async function handleStockSave(id: number) {
     try {
       await updateProductStockMutation.mutateAsync({ productId: id, stock: Number(stockValue) });
-      setProducts((prev) => prev.map((p) => p.id === id ? { ...p, stock: Number(stockValue) } : p));
       setEditingStockId(null);
       setStockValue("");
       showSuccessToast("재고가 수정되었습니다.");
@@ -279,6 +264,7 @@ export default function AdminPage() {
                       <option value="UPCOMING">UPCOMING</option>
                       <option value="OPEN">OPEN</option>
                       <option value="CLOSED">CLOSED</option>
+                      <option value="FINISHED">FINISHED</option>
                     </select>
                   </div>
                 </div>
@@ -289,11 +275,11 @@ export default function AdminPage() {
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className={labelCls}>썸네일 이미지</label>
-                    <label className="flex h-20 cursor-pointer items-center justify-center rounded-xl border border-dashed border-neutral-300 bg-neutral-50 text-sm text-neutral-400 transition hover:border-[#f48b94] hover:text-[#f48b94]">
+                    <label className="relative flex h-40 cursor-pointer items-center justify-center rounded-xl border border-dashed border-neutral-300 bg-neutral-50 text-sm text-neutral-400 transition hover:border-[#f48b94] hover:text-[#f48b94] overflow-hidden">
                       {thumbnailUpload.isUploading
                         ? <span className="text-xs text-neutral-400">업로드 중...</span>
                         : eventForm.thumbnailImageUrl
-                          ? <span className="text-xs text-neutral-600 truncate px-2">{eventForm.thumbnailImageUrl}</span>
+                          ? <img src={eventForm.thumbnailImageUrl} alt="썸네일" className="h-full w-full object-cover" />
                           : "+ 이미지 업로드"
                       }
                       <input
@@ -313,11 +299,11 @@ export default function AdminPage() {
                   </div>
                   <div>
                     <label className={labelCls}>상세 이미지</label>
-                    <label className="flex h-20 cursor-pointer items-center justify-center rounded-xl border border-dashed border-neutral-300 bg-neutral-50 text-sm text-neutral-400 transition hover:border-[#f48b94] hover:text-[#f48b94]">
+                    <label className="relative flex h-40 cursor-pointer items-center justify-center rounded-xl border border-dashed border-neutral-300 bg-neutral-50 text-sm text-neutral-400 transition hover:border-[#f48b94] hover:text-[#f48b94] overflow-hidden">
                       {detailUpload.isUploading
                         ? <span className="text-xs text-neutral-400">업로드 중...</span>
                         : eventForm.imageUrl
-                          ? <span className="text-xs text-neutral-600 truncate px-2">{eventForm.imageUrl}</span>
+                          ? <img src={eventForm.imageUrl} alt="상세" className="h-full w-full object-cover" />
                           : "+ 이미지 업로드"
                       }
                       <input
@@ -431,7 +417,7 @@ export default function AdminPage() {
                       <option key={e.id} value={e.id}>{e.brandName} — {e.startAt.replace("T", " ")} ~ {e.endAt.slice(11)}</option>
                     ))}
                   </select>
-                  <p className="mt-1 text-xs text-neutral-400">상품이 속할 이벤트를 선택하세요 (eventId로 전달돼요)</p>
+                  <p className="mt-1 text-xs text-neutral-400">상품이 속할 이벤트를 선택하세요</p>
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
@@ -445,16 +431,12 @@ export default function AdminPage() {
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className={labelCls}>재고 수량</label>
-                    <input type="number" value={productForm.stock} onChange={(e) => setProductForm((p) => ({ ...p, stock: e.target.value }))} placeholder="예: 100" className={inputCls} />
-                  </div>
-                  <div>
                     <label className={labelCls}>상품 이미지</label>
-                    <label className="flex h-10 cursor-pointer items-center justify-center rounded-xl border border-dashed border-neutral-300 bg-neutral-50 text-sm text-neutral-400 transition hover:border-[#f48b94] hover:text-[#f48b94]">
+                    <label className="relative flex h-48 cursor-pointer items-center justify-center rounded-xl border border-dashed border-neutral-300 bg-neutral-50 text-sm text-neutral-400 transition hover:border-[#f48b94] hover:text-[#f48b94] overflow-hidden">
                       {productImageUpload.isUploading
                         ? <span className="text-xs text-neutral-400">업로드 중...</span>
                         : productForm.imageUrl
-                          ? <span className="text-xs text-neutral-600 truncate px-2">{productForm.imageUrl}</span>
+                          ? <img src={productForm.imageUrl} alt="상품" className="h-full w-full object-cover" />
                           : "+ 이미지 업로드"
                       }
                       <input
@@ -471,10 +453,16 @@ export default function AdminPage() {
                       />
                     </label>
                   </div>
-                </div>
-                <div>
-                  <label className={labelCls}>상품 설명</label>
-                  <textarea value={productForm.description} onChange={(e) => setProductForm((p) => ({ ...p, description: e.target.value }))} placeholder="상품에 대한 설명을 입력하세요" rows={3} className="w-full rounded-xl border border-neutral-200 bg-neutral-50 px-3 py-2.5 text-sm text-neutral-800 outline-none placeholder:text-neutral-400 focus:border-[#f48b94] focus:ring-1 focus:ring-[#f48b94] resize-none" />
+                  <div className="flex flex-col gap-4">
+                    <div>
+                      <label className={labelCls}>재고 수량</label>
+                      <input type="number" value={productForm.stock} onChange={(e) => setProductForm((p) => ({ ...p, stock: e.target.value }))} placeholder="예: 100" className={inputCls} />
+                    </div>
+                    <div className="flex-1">
+                      <label className={labelCls}>상품 설명</label>
+                      <textarea value={productForm.description} onChange={(e) => setProductForm((p) => ({ ...p, description: e.target.value }))} placeholder="상품에 대한 설명을 입력하세요" className="w-full h-[calc(100%-1.5rem)] min-h-[80px] rounded-xl border border-neutral-200 bg-neutral-50 px-3 py-2.5 text-sm text-neutral-800 outline-none placeholder:text-neutral-400 focus:border-[#f48b94] focus:ring-1 focus:ring-[#f48b94] resize-none" />
+                    </div>
+                  </div>
                 </div>
                 <div className="flex justify-end gap-2">
                   {editingProductId !== null && (
@@ -512,13 +500,12 @@ export default function AdminPage() {
                   </thead>
                   <tbody className="divide-y divide-neutral-50">
                     {products.map((product) => {
-                      const event = events.find((e) => e.id === product.eventId);
                       return (
                         <tr key={product.id}>
                           <td className="py-3 pr-4 font-semibold text-neutral-800">{product.name}</td>
                           <td className="py-3 pr-4">
                             <span className="rounded-full bg-[#ffd6e0] px-2.5 py-0.5 text-xs font-semibold text-[#f48b94]">
-                              {event?.brandName ?? "-"}
+                              {product.eventBrandName}
                             </span>
                           </td>
                           <td className="py-3 pr-4 text-neutral-600">{product.price.toLocaleString()}원</td>

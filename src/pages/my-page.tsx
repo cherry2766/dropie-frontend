@@ -299,7 +299,7 @@ export default function MyPage() {
       )}
 
       {/* 회원 탈퇴 */}
-      <div className="mt-10 border-t border-neutral-100 pt-6">
+      <div className="fixed bottom-20 right-[calc(50%-270px+16px)]">
         <AlertDialog>
           <AlertDialogTrigger asChild>
             <button className="text-xs text-neutral-400 underline underline-offset-2 hover:text-red-400 transition-colors">

@@ -3,6 +3,7 @@ import api from "@/lib/api";
 import type {
   GetPresignedUrlRequest,
   GetPresignedUrlResponse,
+  AdminProductItem,
   CreateEventRequest,
   CreateEventResponse,
   UpdateEventRequest,
@@ -16,6 +17,7 @@ import type {
   UpdateProductStockRequest,
   UpdateProductStockResponse,
 } from "@/types/admin";
+import type { EventEntity } from "@/types/event";
 
 // ── Image ──────────────────────────────────────────────────────────────────
 
@@ -32,6 +34,11 @@ export async function uploadToS3(presignedUrl: string, file: File): Promise<void
 }
 
 // ── Events ─────────────────────────────────────────────────────────────────
+
+export async function getAdminEvents(): Promise<EventEntity[]> {
+  const res = await api.get<EventEntity[]>("/admin/events");
+  return res.data;
+}
 
 export async function createEvent(data: CreateEventRequest): Promise<CreateEventResponse> {
   const res = await api.post<CreateEventResponse>("/admin/events", data);
@@ -59,6 +66,11 @@ export async function deleteEvent(eventId: number): Promise<void> {
 }
 
 // ── Products ───────────────────────────────────────────────────────────────
+
+export async function getAdminProducts(): Promise<AdminProductItem[]> {
+  const res = await api.get<AdminProductItem[]>("/admin/products");
+  return res.data;
+}
 
 export async function createProduct(data: CreateProductRequest): Promise<CreateProductResponse> {
   const res = await api.post<CreateProductResponse>("/admin/products", data);

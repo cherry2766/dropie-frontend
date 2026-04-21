@@ -3,4 +3,12 @@ export const QUERY_KEYS = {
     all: ["tags"],
     list: ["tags", "list"],
   },
+  admin: {
+    events: {
+      all: ["admin", "events"],
+    },
+    products: {
+      all: ["admin", "products"],
+    },
+  },
 } as const;
