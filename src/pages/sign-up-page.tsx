@@ -66,10 +66,10 @@ export default function SignUpPage() {
   function handleChange(field: keyof FormFields) {
     return (e: React.ChangeEvent<HTMLInputElement>) => {
       setForm((prev) => ({ ...prev, [field]: e.target.value }));
-      // 해당 필드 에러만 실시간으로 지워줌
       if (errors[field]) setErrors((prev) => ({ ...prev, [field]: undefined }));
     };
   }
+
 
   function handleSubmit() {
     const validationErrors = validate(form);
