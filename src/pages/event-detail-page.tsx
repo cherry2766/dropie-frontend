@@ -24,8 +24,11 @@ export default function EventDetailPage() {
   }
 
   function handleConfirm() {
+    const items = products
+      .filter((p) => getQty(p.id) > 0)
+      .map((p) => ({ id: p.id, name: p.name, imageUrl: p.imageUrl, price: p.price, quantity: getQty(p.id) }));
     setShowSheet(false);
-    navigate("/orders");
+    navigate("/orders", { state: { items } });
   }
 
   const getQty = (id: number) => quantities[id] ?? 0;

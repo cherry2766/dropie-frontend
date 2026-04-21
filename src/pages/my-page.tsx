@@ -6,6 +6,9 @@ import { useUpdateNickname } from "@/hooks/mutations/user/use-update-nickname";
 import { useUpdateProfileImage } from "@/hooks/mutations/user/use-update-profile-image";
 import { useAddressesData } from "@/hooks/queries/use-addresses-data";
 import { useMeData } from "@/hooks/queries/use-me-data";
+import { useMyOrdersData } from "@/hooks/queries/use-my-orders-data";
+import { useCancelOrder } from "@/hooks/mutations/order/use-cancel-order";
+import type { OrderStatus } from "@/types/order";
 import { useUpdateAddress } from "@/hooks/mutations/address/use-update-address";
 import { useDeleteAddress } from "@/hooks/mutations/address/use-delete-address";
 import AddAddressModal from "@/components/my/add-address-modal";
@@ -24,11 +27,17 @@ import { showSuccessToast } from "@/lib/toast";
 
 type Tab = "orders" | "address";
 
-const ORDER_HISTORY = [
-  { id: 1, date: "2026.04.02", name: "봄 딸기 디저트 박스 외 1건", price: 91000, status: "배송완료" },
-  { id: 2, date: "2026.03.20", name: "말차 크림 롤케이크", price: 32000, status: "배송완료" },
-  { id: 3, date: "2026.03.10", name: "얼그레이 마들렌 세트", price: 18000, status: "배송완료" },
-];
+const ORDER_STATUS_LABEL: Record<OrderStatus, string> = {
+  PENDING: "결제 대기",
+  PAID: "결제 완료",
+  CANCELED: "취소됨",
+};
+
+const ORDER_STATUS_STYLE: Record<OrderStatus, string> = {
+  PENDING: "bg-amber-50 text-amber-600",
+  PAID: "bg-emerald-50 text-emerald-600",
+  CANCELED: "bg-neutral-100 text-neutral-400",
+};
 
 export default function MyPage() {
   const { mutate: logout, isPending: isLoggingOut } = useLogoutMutation();
@@ -64,6 +73,9 @@ export default function MyPage() {
   }
 
   const { data: addresses = [] } = useAddressesData();
+  const { data: ordersData } = useMyOrdersData();
+  const cancelOrderMutation = useCancelOrder();
+  const orders = ordersData?.content ?? [];
   const updateAddressMutation = useUpdateAddress();
   const deleteAddressMutation = useDeleteAddress();
 
@@ -172,18 +184,35 @@ export default function MyPage() {
       {/* 주문 내역 */}
       {tab === "orders" && (
         <div className="space-y-2">
-          {ORDER_HISTORY.map((order) => (
-            <div key={order.id} className="flex items-center justify-between rounded-2xl border border-neutral-100 px-4 py-3">
-              <div>
-                <p className="text-xs text-neutral-400">{order.date}</p>
-                <p className="mt-0.5 text-sm font-medium text-neutral-800">{order.name}</p>
-                <p className="mt-0.5 text-sm font-bold text-neutral-900">{order.price.toLocaleString()}원</p>
+          {orders.length === 0 ? (
+            <p className="py-10 text-center text-sm text-neutral-400">주문 내역이 없어요.</p>
+          ) : (
+            orders.map((order) => (
+              <div key={order.orderId} className="rounded-2xl border border-neutral-100 px-4 py-3">
+                <div className="flex items-start justify-between">
+                  <div>
+                    <p className="text-xs text-neutral-400">{order.createdAt.replace("T", " ").slice(0, 16)}</p>
+                    <p className="mt-0.5 text-sm font-medium text-neutral-800">{order.orderNumber}</p>
+                    <p className="mt-0.5 text-sm font-bold text-neutral-900">{order.totalPrice.toLocaleString()}원</p>
+                  </div>
+                  <div className="flex flex-col items-end gap-2">
+                    <span className={`rounded-full px-2.5 py-1 text-xs font-medium ${ORDER_STATUS_STYLE[order.status]}`}>
+                      {ORDER_STATUS_LABEL[order.status]}
+                    </span>
+                    {order.status === "PENDING" && (
+                      <button
+                        onClick={() => cancelOrderMutation.mutate(order.orderId)}
+                        disabled={cancelOrderMutation.isPending}
+                        className="text-xs text-neutral-400 hover:text-red-400 disabled:opacity-50 transition-colors"
+                      >
+                        주문 취소
+                      </button>
+                    )}
+                  </div>
+                </div>
               </div>
-              <span className="rounded-full bg-neutral-100 px-2.5 py-1 text-xs font-medium text-neutral-500">
-                {order.status}
-              </span>
-            </div>
-          ))}
+            ))
+          )}
         </div>
       )}
 
