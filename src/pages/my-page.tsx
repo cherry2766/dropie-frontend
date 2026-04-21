@@ -1,4 +1,5 @@
 import { useState, useRef } from "react";
+import { Link } from "react-router-dom";
 import { User, MapPin, LogOut, Plus, Package, Camera, Pencil, Check, X as XIcon } from "lucide-react";
 import { useLogoutMutation } from "@/hooks/mutations/auth/use-logout";
 import { useWithdrawUser } from "@/hooks/mutations/user/use-withdraw-user";
@@ -270,8 +271,11 @@ export default function MyPage() {
         </div>
       )}
 
-      {/* 회원 탈퇴 */}
-      <div className="mt-10 flex justify-end">
+      {/* 비밀번호 변경 / 회원 탈퇴 */}
+      <div className="mt-10 flex items-center justify-end gap-4">
+        <Link to="/forgot-password" className="text-xs text-neutral-400 underline underline-offset-2 hover:text-neutral-600 transition-colors">
+          비밀번호 변경
+        </Link>
         <AlertDialog>
           <AlertDialogTrigger asChild>
             <button className="text-xs text-neutral-400 underline underline-offset-2 hover:text-red-400 transition-colors">
