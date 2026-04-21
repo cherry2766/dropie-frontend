@@ -1,5 +1,10 @@
 export const QUERY_KEYS = {
   me: ["me"],
+  events: {
+    all: ["events"],
+    list: (page: number, size: number) => ["events", "list", page, size],
+    detail: (id: number) => ["events", "detail", id],
+  },
   tags: {
     all: ["tags"],
     list: ["tags", "list"],

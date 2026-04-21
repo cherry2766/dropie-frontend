@@ -14,7 +14,7 @@ import { useCreateProduct } from "@/hooks/mutations/admin/use-create-product";
 import { useUpdateProduct } from "@/hooks/mutations/admin/use-update-product";
 import { useUpdateProductStock } from "@/hooks/mutations/admin/use-update-product-stock";
 import { useDeleteProduct } from "@/hooks/mutations/admin/use-delete-product";
-import { showSuccessToast } from "@/lib/toast";
+import { showSuccessToast, showInfoToast } from "@/lib/toast";
 
 // Tab은 이 페이지 내부에서만 쓰는 UI 상태이므로 여기에 정의
 type Tab = "events" | "products";
@@ -144,7 +144,10 @@ export default function AdminPage() {
 
   // 상품 등록/수정
   async function handleProductSubmit() {
-    if (!productForm.name || !productForm.eventId || !productForm.price) return;
+    if (!productForm.eventId) { showInfoToast("이벤트를 선택해주세요."); return; }
+    if (!productForm.name) { showInfoToast("상품명을 입력해주세요."); return; }
+    if (!productForm.price) { showInfoToast("가격을 입력해주세요."); return; }
+    if (!productForm.stock) { showInfoToast("재고 수량을 입력해주세요."); return; }
     if (productImageUpload.isUploading) return;
 
     try {
@@ -494,11 +497,11 @@ export default function AdminPage() {
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="border-b border-neutral-100 text-left text-xs font-semibold text-neutral-400">
-                      <th className="pb-3 pr-4">상품명</th>
-                      <th className="pb-3 pr-4">이벤트</th>
-                      <th className="pb-3 pr-4">가격</th>
-                      <th className="pb-3 pr-4">재고</th>
-                      <th className="pb-3"></th>
+                      <th className="pb-3 pr-4 w-[30%]">상품명</th>
+                      <th className="pb-3 pr-4 w-[15%]">이벤트</th>
+                      <th className="pb-3 pr-4 w-[17%]">가격</th>
+                      <th className="pb-3 pr-4 w-[10%]">재고</th>
+                      <th className="pb-3 w-[28%]"></th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-neutral-50">
