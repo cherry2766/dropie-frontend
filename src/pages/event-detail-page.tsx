@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { ChevronLeft, Clock, Package, Minus, Plus, X } from "lucide-react";
 import { useEventDetailData } from "@/hooks/queries/use-event-detail-data";
@@ -7,6 +7,10 @@ export default function EventDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { data: event, isLoading } = useEventDetailData(Number(id));
+
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: "instant" });
+  }, [id]);
 
   const products = event?.products.content ?? [];
 

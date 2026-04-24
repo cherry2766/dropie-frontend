@@ -50,6 +50,7 @@ export default function AdminPage() {
   const [editingProductId, setEditingProductId] = useState<number | null>(null);
   const [editingStockId, setEditingStockId] = useState<number | null>(null);
   const [stockValue, setStockValue] = useState("");
+  const [filterEventId, setFilterEventId] = useState<string>("");
 
   // 이미지 업로드 (썸네일/상세 이미지 분리, 상품 이미지 별도)
   const thumbnailUpload = useImageUpload();
@@ -492,7 +493,19 @@ export default function AdminPage() {
 
             {/* 상품 목록 */}
             <div className="rounded-2xl border border-neutral-200 bg-white p-6 shadow-sm">
-              <h2 className="mb-4 border-l-4 border-[#f48b94] pl-3 text-base font-bold text-neutral-900">상품 목록</h2>
+              <div className="mb-4 flex items-center justify-between">
+                <h2 className="border-l-4 border-[#f48b94] pl-3 text-base font-bold text-neutral-900">상품 목록</h2>
+                <select
+                  value={filterEventId}
+                  onChange={(e) => setFilterEventId(e.target.value)}
+                  className="h-9 rounded-xl border border-neutral-200 bg-neutral-50 px-3 text-sm text-neutral-700 outline-none focus:border-[#f48b94] focus:ring-1 focus:ring-[#f48b94]"
+                >
+                  <option value="">전체 이벤트</option>
+                  {events.map((e) => (
+                    <option key={e.id} value={e.id}>{e.brandName}</option>
+                  ))}
+                </select>
+              </div>
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead>
@@ -505,7 +518,7 @@ export default function AdminPage() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-neutral-50">
-                    {products.map((product) => {
+                    {(filterEventId ? products.filter((p) => p.eventId === Number(filterEventId)) : products).map((product) => {
                       return (
                         <tr key={product.id}>
                           <td className="py-3 pr-4 font-semibold text-neutral-800">{product.name}</td>
