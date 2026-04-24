@@ -3,10 +3,12 @@ import logo from "@/assets/dropie_logo.svg";
 import { Button } from "@/components/ui/button";
 import { User, ShieldCheck } from "lucide-react";
 import { useIsLoggedIn, useRole } from "@/store/auth";
+import { useMeData } from "@/hooks/queries/use-me-data";
 
 export default function GlobalLayout() {
   const isLoggedIn = useIsLoggedIn();
   const role = useRole();
+  const { data: me } = useMeData({ enabled: isLoggedIn });
 
   return (
     <div className="min-h-screen bg-neutral-100 px-4 py-6 md:py-10">
@@ -28,8 +30,16 @@ export default function GlobalLayout() {
                     </Link>
                   )}
                   <Link to="/my">
-                    <button className="flex h-9 w-9 items-center justify-center rounded-full border border-neutral-200 transition hover:bg-neutral-50">
-                      <User className="h-5 w-5 text-neutral-600" />
+                    <button className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-full border border-neutral-200 transition hover:bg-neutral-50">
+                      {me?.profileImageUrl ? (
+                        <img
+                          src={me.profileImageUrl}
+                          alt="프로필"
+                          className="h-full w-full object-cover"
+                        />
+                      ) : (
+                        <User className="h-5 w-5 text-neutral-600" />
+                      )}
                     </button>
                   </Link>
                 </>
