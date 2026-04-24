@@ -26,6 +26,12 @@ export const ERROR_MESSAGE_MAP = {
   ORDER_TIME_NOT_ALLOWED: "주문 가능한 시간이 아닙니다.",
   CANCEL_NOT_ALLOWED: "취소할 수 없는 주문 상태입니다.",
   DUPLICATE_ORDER_ITEM: "동일한 상품을 중복 요청할 수 없습니다.",
+  ORDER_NOT_PENDING: "결제 대기 상태의 주문만 결제할 수 있습니다.",
+  ORDER_ACCESS_DENIED: "해당 주문에 접근할 권한이 없습니다.",
+
+  PAYMENT_FAILED: "결제 처리 중 오류가 발생했습니다.",
+  PAYMENT_AMOUNT_MISMATCH: "결제 금액이 주문 금액과 일치하지 않습니다.",
+  PAYMENT_ALREADY_PROCESSED: "이미 처리된 결제입니다.",
 
   TAG_NOT_FOUND: "존재하지 않는 태그입니다.",
   ADDRESS_NOT_FOUND: "존재하지 않는 배송지입니다.",

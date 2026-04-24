@@ -5,6 +5,8 @@ import type {
   OrderListResponse,
   OrderDetail,
   CancelOrderResponse,
+  PaymentConfirmRequest,
+  PaymentConfirmResponse,
 } from "@/types/order";
 
 export async function createOrder(data: CreateOrderRequest): Promise<CreateOrderResponse> {
@@ -24,5 +26,16 @@ export async function getOrderDetail(orderId: number): Promise<OrderDetail> {
 
 export async function cancelOrder(orderId: number): Promise<CancelOrderResponse> {
   const res = await api.patch<CancelOrderResponse>(`/orders/${orderId}/cancel`);
+  return res.data;
+}
+
+export async function confirmPayment(
+  orderId: number,
+  data: PaymentConfirmRequest,
+): Promise<PaymentConfirmResponse> {
+  const res = await api.post<PaymentConfirmResponse>(
+    `/orders/${orderId}/payment/confirm`,
+    data,
+  );
   return res.data;
 }

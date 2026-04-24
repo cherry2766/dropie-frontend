@@ -1,23 +1,27 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { ChevronLeft, PackageCheck, Search, MapPin, ChevronRight } from "lucide-react";
+import { ChevronLeft, Search, MapPin, ChevronRight } from "lucide-react";
 import DaumPostcodeEmbed from "react-daum-postcode";
+import { loadTossPayments, ANONYMOUS } from "@tosspayments/tosspayments-sdk";
 import { useAddressesData } from "@/hooks/queries/use-addresses-data";
 import { useCreateOrder } from "@/hooks/mutations/order/use-create-order";
+import { useMeData } from "@/hooks/queries/use-me-data";
+import { showErrorToast } from "@/lib/toast";
 import type { AddressEntity } from "@/types/address";
 
 type OrderItem = { id: number; name: string; imageUrl: string; price: number; quantity: number };
 
-const SHIPPING_FEE = 3000;
+const TOSS_CLIENT_KEY = import.meta.env.VITE_TOSS_CLIENT_KEY as string;
 
 export default function OrderPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const orderItems: OrderItem[] = location.state?.items ?? [];
   const { data: addresses = [] } = useAddressesData();
+  const { data: me } = useMeData();
 
   const createOrderMutation = useCreateOrder();
-  const [orderNumber, setOrderNumber] = useState<string | null>(null);
+  const [isProcessing, setIsProcessing] = useState(false);
   const [showPostcode, setShowPostcode] = useState(false);
   const [showAddressSheet, setShowAddressSheet] = useState(false);
   const [selectedAddressId, setSelectedAddressId] = useState<number | null>(null);
@@ -58,7 +62,6 @@ export default function OrderPage() {
   }
 
   const totalPrice = orderItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
-  const finalPrice = totalPrice + SHIPPING_FEE;
 
   function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
     setSelectedAddressId(null); // 직접 수정 시 선택 해제
@@ -66,9 +69,12 @@ export default function OrderPage() {
   }
 
   async function handleOrder() {
-    if (!form.name || !form.address1) return;
+    if (!form.name || !form.address1 || orderItems.length === 0) return;
+
+    setIsProcessing(true);
     try {
-      const res = await createOrderMutation.mutateAsync({
+      // 1. 주문 생성 (재고 선점, status = PENDING)
+      const order = await createOrderMutation.mutateAsync({
         receiverName: form.name,
         phone: form.phone,
         zipcode: form.zipcode,
@@ -76,41 +82,40 @@ export default function OrderPage() {
         address2: form.address2,
         items: orderItems.map((item) => ({ productId: item.id, quantity: item.quantity })),
       });
-      setOrderNumber(res.orderNumber);
-    } catch {
-      // 에러는 mutation의 onError에서 toast 처리
-    }
-  }
 
-  if (orderNumber) {
-    return (
-      <div className="flex min-h-[60vh] flex-col items-center justify-center px-4 text-center">
-        <div className="mb-5 flex h-20 w-20 items-center justify-center rounded-full bg-[#fff0f3]">
-          <PackageCheck className="h-10 w-10 text-[#f48b94]" />
-        </div>
-        <h1 className="text-xl font-extrabold text-neutral-900">주문이 완료됐어요!</h1>
-        <p className="mt-2 text-sm text-neutral-500">
-          주문번호 <span className="font-semibold text-neutral-700">{orderNumber}</span>
-        </p>
-        <p className="mt-1 text-sm text-neutral-400">
-          주문 내역은 마이페이지에서 확인할 수 있어요
-        </p>
-        <div className="mt-8 flex w-full max-w-[320px] flex-col gap-3">
-          <button
-            onClick={() => navigate("/")}
-            className="h-12 w-full rounded-2xl bg-[#f48b94] text-sm font-semibold text-white shadow-[0_4px_14px_rgba(244,139,148,0.35)] transition hover:bg-[#ee7b86]"
-          >
-            홈으로
-          </button>
-          <button
-            onClick={() => navigate("/my")}
-            className="h-12 w-full rounded-2xl border border-neutral-200 text-sm font-semibold text-neutral-600 transition hover:bg-neutral-50"
-          >
-            주문 내역 보기
-          </button>
-        </div>
-      </div>
-    );
+      // 2. 토스 결제창 오픈 — 성공 시 successUrl로 redirect
+      const tossPayments = await loadTossPayments(TOSS_CLIENT_KEY);
+      const payment = tossPayments.payment({
+        // 토스 customerKey는 최소 2자 — user id가 한 자리여도 통과하도록 prefix
+        customerKey: me?.id ? `user-${me.id}` : ANONYMOUS,
+      });
+
+      const orderName =
+        orderItems.length === 1
+          ? orderItems[0].name
+          : `${orderItems[0].name} 외 ${orderItems.length - 1}건`;
+
+      // successUrl에 우리 DB orderId를 붙여서 성공 페이지가 confirm API를 호출할 수 있게 함
+      // (토스가 붙여주는 orderId는 orderNumber라서 DB id가 별도로 필요)
+      const successUrl = `${window.location.origin}/order/success?dbOrderId=${order.orderId}`;
+      const failUrl = `${window.location.origin}/order/fail`;
+
+      await payment.requestPayment({
+        method: "CARD",
+        amount: { currency: "KRW", value: totalPrice },
+        orderId: order.orderNumber,
+        orderName,
+        successUrl,
+        failUrl,
+        customerEmail: me?.email,
+        customerName: form.name,
+      });
+    } catch (error) {
+      // 토스 SDK 에러는 AxiosError가 아니라 원본을 그대로 콘솔에 남겨야 원인 파악 가능
+      console.error("[OrderPage] 결제 요청 실패", error);
+      showErrorToast(error);
+      setIsProcessing(false);
+    }
   }
 
   return (
@@ -253,14 +258,10 @@ export default function OrderPage() {
             <span>상품 금액</span>
             <span>{totalPrice.toLocaleString()}원</span>
           </div>
-          <div className="flex justify-between text-sm text-neutral-500">
-            <span>배송비</span>
-            <span>{SHIPPING_FEE.toLocaleString()}원</span>
-          </div>
           <div className="mt-2 flex justify-between border-t border-neutral-100 pt-3">
             <span className="text-base font-bold text-neutral-900">최종 결제 금액</span>
             <span className="text-base font-extrabold text-[#f48b94]">
-              {finalPrice.toLocaleString()}원
+              {totalPrice.toLocaleString()}원
             </span>
           </div>
         </div>
@@ -270,10 +271,10 @@ export default function OrderPage() {
       <div className="fixed bottom-0 left-1/2 z-20 w-full max-w-[540px] -translate-x-1/2 border-t border-neutral-100 bg-white px-4 py-3">
         <button
           onClick={handleOrder}
-          disabled={createOrderMutation.isPending}
+          disabled={isProcessing}
           className="h-14 w-full rounded-2xl bg-[#f48b94] text-base font-semibold text-white shadow-[0_4px_14px_rgba(244,139,148,0.35)] transition hover:bg-[#ee7b86] disabled:opacity-60"
         >
-          {createOrderMutation.isPending ? "처리 중..." : `${finalPrice.toLocaleString()}원 결제하기`}
+          {isProcessing ? "처리 중..." : `${totalPrice.toLocaleString()}원 결제하기`}
         </button>
       </div>
 
