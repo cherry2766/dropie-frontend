@@ -34,13 +34,6 @@ export default function OrderPage() {
     memo: "",
   });
 
-  // 주소 목록 로드 시 기본 배송지로 폼 초기화
-  useEffect(() => {
-    if (addresses.length === 0) return;
-    const defaultAddr = addresses.find((a) => a.isDefault) ?? addresses[0];
-    applyAddress(defaultAddr);
-  }, [addresses]);
-
   function applyAddress(addr: AddressEntity) {
     setSelectedAddressId(addr.id);
     setForm((prev) => ({
@@ -52,6 +45,15 @@ export default function OrderPage() {
       address2: addr.address2,
     }));
   }
+
+  // 주소 목록 로드 시 기본 배송지로 폼 초기화 — 사용자가 이후 직접 수정할 수 있어야 하므로
+  // derived state가 아니라 editable state로 관리, 초기 동기화는 effect에서 한 번만 수행
+  useEffect(() => {
+    if (addresses.length === 0) return;
+    const defaultAddr = addresses.find((a) => a.isDefault) ?? addresses[0];
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    applyAddress(defaultAddr);
+  }, [addresses]);
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   function handleAddressSelect(data: any) {

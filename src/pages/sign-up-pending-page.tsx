@@ -6,10 +6,9 @@ import { Spinner } from "@/components/ui/spinner";
 export default function SignUpPendingPage() {
   const location = useLocation();
   const email = (location.state as { email?: string } | null)?.email;
+  const { mutate: resend, isPending } = useResendVerification();
 
   if (!email) return <Navigate to="/sign-up" replace />;
-
-  const { mutate: resend, isPending } = useResendVerification();
 
   return (
     <div className="px-4 pt-8 pb-10">
