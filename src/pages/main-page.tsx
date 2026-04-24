@@ -1,6 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import bannerImage from "@/assets/banner.png";
 import { useEventsData } from "@/hooks/queries/use-events-data";
+import { useEventLineupData } from "@/hooks/queries/use-event-lineup-data";
 import type { EventStatus } from "@/types/event";
 
 const STATUS_LABEL: Record<EventStatus, string> = {
@@ -19,7 +20,9 @@ const STATUS_STYLE: Record<EventStatus, string> = {
 
 export default function MainPage() {
   const navigate = useNavigate();
-  const { data, isLoading } = useEventsData();
+  const { data: eventsData, isLoading: eventsLoading } = useEventsData(1, 6, "OPEN");
+  const { data: lineupData } = useEventLineupData();
+
   return (
     <div className="space-y-6">
       {/* 배너 (이미지만) */}
@@ -54,56 +57,34 @@ export default function MainPage() {
             오픈 예정 라인업
           </h2>
 
-          {/* 1차 */}
-          <div className="flex justify-between rounded-2xl border border-neutral-200 bg-white p-4">
-            <div>
-              <p className="text-base font-bold">1차 오픈</p>
-              <p className="mt-1 text-xs text-neutral-400">
-                3/13 오전 11시 ~<br />
-                3/16 오전 10시 59분
-              </p>
-            </div>
+          {(lineupData ?? []).map((round, index) => {
+            const isHighlighted = index === 1;
+            return (
+              <div
+                key={round.round}
+                className={`flex justify-between rounded-2xl p-4 ${
+                  isHighlighted
+                    ? "bg-[#FFA69E]"
+                    : "border border-neutral-200 bg-white"
+                }`}
+              >
+                <div>
+                  <p className={`text-base font-bold ${isHighlighted ? "text-neutral-900" : ""}`}>
+                    {round.round}차 오픈
+                  </p>
+                </div>
 
-            <div className="text-right text-sm font-medium text-neutral-800">
-              쑤니맘베이커리 · 장인한과
-              <br />
-              니드쿠키 · 코코로나인
-            </div>
-          </div>
-
-          {/* 2차 (강조) */}
-          <div className="flex justify-between rounded-2xl bg-[#FFA69E] p-4">
-            <div>
-              <p className="text-base font-bold text-neutral-900">2차 오픈</p>
-              <p className="mt-1 text-xs text-neutral-700">
-                3/16 오전 11시 ~<br />
-                3/19 오전 10시 59분
-              </p>
-            </div>
-
-            <div className="text-right text-sm font-medium">
-              콩지니빵 · 니드스윗
-              <br />
-              여름방학 · 위로상점
-            </div>
-          </div>
-
-          {/* 3차 */}
-          <div className="flex justify-between rounded-2xl border border-neutral-200 bg-white p-4">
-            <div>
-              <p className="text-base font-bold">3차 오픈</p>
-              <p className="mt-1 text-xs text-neutral-400">
-                3/19 오전 11시 ~<br />
-                3/21 자정까지
-              </p>
-            </div>
-
-            <div className="text-right text-sm font-medium text-neutral-800">
-              구움양과점 · 벨리스
-              <br />
-              각이당 · 윤쓰코티
-            </div>
-          </div>
+                <div className={`text-right text-sm font-medium ${isHighlighted ? "" : "text-neutral-800"}`}>
+                  {Array.from({ length: Math.ceil(round.brands.length / 2) }, (_, i) => (
+                    <p key={i}>
+                      {round.brands[i * 2]}
+                      {round.brands[i * 2 + 1] ? ` · ${round.brands[i * 2 + 1]}` : ""}
+                    </p>
+                  ))}
+                </div>
+              </div>
+            );
+          })}
         </section>
       </section>
 
@@ -124,7 +105,7 @@ export default function MainPage() {
       </section>
 
       <section className="grid grid-cols-2 gap-x-3 gap-y-5">
-        {isLoading
+        {eventsLoading
           ? Array.from({ length: 6 }).map((_, i) => (
               <article key={i} className="space-y-2 animate-pulse">
                 <div className="aspect-[3/4] w-full rounded-2xl bg-neutral-200" />
@@ -135,7 +116,7 @@ export default function MainPage() {
                 </div>
               </article>
             ))
-          : (data?.content ?? []).map((event) => (
+          : (eventsData?.content ?? []).map((event) => (
               <article
                 key={event.id}
                 onClick={() => navigate(`/events/${event.id}`)}
