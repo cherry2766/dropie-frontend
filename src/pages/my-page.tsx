@@ -8,11 +8,11 @@ import { useUpdateProfileImage } from "@/hooks/mutations/user/use-update-profile
 import { useAddressesData } from "@/hooks/queries/use-addresses-data";
 import { useMeData } from "@/hooks/queries/use-me-data";
 import { useMyOrdersData } from "@/hooks/queries/use-my-orders-data";
-import { useCancelOrder } from "@/hooks/mutations/order/use-cancel-order";
 import type { OrderStatus } from "@/types/order";
 import { useUpdateAddress } from "@/hooks/mutations/address/use-update-address";
 import { useDeleteAddress } from "@/hooks/mutations/address/use-delete-address";
 import AddAddressModal from "@/components/my/add-address-modal";
+import OrderDetailSheet from "@/components/my/order-detail-sheet";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -48,6 +48,7 @@ export default function MyPage() {
   const { data: me } = useMeData();
   const [tab, setTab] = useState<Tab>("orders");
   const [showAddModal, setShowAddModal] = useState(false);
+  const [selectedOrderId, setSelectedOrderId] = useState<number | null>(null);
   const [editingNickname, setEditingNickname] = useState(false);
   const [nicknameInput, setNicknameInput] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -75,7 +76,6 @@ export default function MyPage() {
 
   const { data: addresses = [] } = useAddressesData();
   const { data: ordersData } = useMyOrdersData();
-  const cancelOrderMutation = useCancelOrder();
   const orders = ordersData?.content ?? [];
   const updateAddressMutation = useUpdateAddress();
   const deleteAddressMutation = useDeleteAddress();
@@ -189,29 +189,23 @@ export default function MyPage() {
             <p className="py-10 text-center text-sm text-neutral-400">주문 내역이 없어요.</p>
           ) : (
             orders.map((order) => (
-              <div key={order.orderId} className="rounded-2xl border border-neutral-100 px-4 py-3">
+              <button
+                key={order.orderId}
+                onClick={() => setSelectedOrderId(order.orderId)}
+                className="w-full rounded-2xl border border-neutral-100 px-4 py-3 text-left transition hover:border-[#f4c9cf] hover:bg-[#fffafb]"
+              >
                 <div className="flex items-start justify-between">
                   <div>
                     <p className="text-xs text-neutral-400">{order.createdAt.replace("T", " ").slice(0, 16)}</p>
-                    <p className="mt-0.5 text-sm font-medium text-neutral-800">{order.orderNumber}</p>
+                    <p className="mt-0.5 text-sm font-bold text-[#f48b94]">{order.brandName}</p>
+                    <p className="mt-0.5 text-xs text-neutral-500">{order.orderNumber}</p>
                     <p className="mt-0.5 text-sm font-bold text-neutral-900">{order.totalPrice.toLocaleString()}원</p>
                   </div>
-                  <div className="flex flex-col items-end gap-2">
-                    <span className={`rounded-full px-2.5 py-1 text-xs font-medium ${ORDER_STATUS_STYLE[order.status]}`}>
-                      {ORDER_STATUS_LABEL[order.status]}
-                    </span>
-                    {order.status === "PENDING" && (
-                      <button
-                        onClick={() => cancelOrderMutation.mutate(order.orderId)}
-                        disabled={cancelOrderMutation.isPending}
-                        className="text-xs text-neutral-400 hover:text-red-400 disabled:opacity-50 transition-colors"
-                      >
-                        주문 취소
-                      </button>
-                    )}
-                  </div>
+                  <span className={`rounded-full px-2.5 py-1 text-xs font-medium ${ORDER_STATUS_STYLE[order.status]}`}>
+                    {ORDER_STATUS_LABEL[order.status]}
+                  </span>
                 </div>
-              </div>
+              </button>
             ))
           )}
         </div>
@@ -308,6 +302,11 @@ export default function MyPage() {
         isOpen={showAddModal}
         onClose={() => setShowAddModal(false)}
         isFirstAddress={addresses.length === 0}
+      />
+
+      <OrderDetailSheet
+        orderId={selectedOrderId}
+        onClose={() => setSelectedOrderId(null)}
       />
     </div>
   );
