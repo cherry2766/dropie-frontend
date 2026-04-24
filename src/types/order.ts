@@ -21,6 +21,7 @@ export type CreateOrderResponse = {
 export type OrderListItem = {
   orderId: number;
   orderNumber: string;
+  brandName: string;
   totalPrice: number;
   status: OrderStatus;
   createdAt: string;
@@ -29,6 +30,8 @@ export type OrderListItem = {
 export type OrderDetailItem = {
   productId: number;
   productName: string;
+  brandName: string;
+  imageUrl: string;
   quantity: number;
   orderPrice: number;
 };
