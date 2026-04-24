@@ -31,14 +31,15 @@ export default function RootRoute() {
         <Route path="/events/:id" element={<EventDetailPage />} />
         {/* 백엔드가 이메일 인증 후 ?success=true/false 로 리다이렉트하는 경로 */}
         <Route path="/signup-complete" element={<VerifyEmailPage />} />
+        {/* 비밀번호 재설정은 로그인 상태와 무관하게 접근 가능 (마이페이지에서도 진입) */}
+        <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+        <Route path="/reset-password" element={<ResetPasswordPage />} />
 
         {/* 로그인 안 한 사용자만 */}
         <Route element={<GuestOnlyLayout />}>
           <Route path="/login" element={<LoginPage />} />
           <Route path="/sign-up" element={<SignUpPage />} />
           <Route path="/sign-up-pending" element={<SignUpPendingPage />} />
-          <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-          <Route path="/reset-password" element={<ResetPasswordPage />} />
         </Route>
 
         {/* 로그인 한 사용자만 */}
