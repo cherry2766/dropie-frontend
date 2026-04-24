@@ -50,3 +50,18 @@ export type CancelOrderResponse = {
   orderId: number;
   status: OrderStatus;
 };
+
+export type PaymentConfirmRequest = {
+  paymentKey: string;
+  amount: number;
+};
+
+export type PaymentConfirmResponse = {
+  orderId: number;
+  orderNumber: string;
+  status: OrderStatus;
+  paymentKey: string;
+  amount: number;
+  method: string;
+  approvedAt: string;
+};

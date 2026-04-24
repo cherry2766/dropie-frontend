@@ -10,6 +10,8 @@ import MainPage from "@/pages/main-page";
 import MyPage from "@/pages/my-page";
 import OnboardingPage from "@/pages/onboarding-page";
 import OrderPage from "@/pages/order-page";
+import OrderSuccessPage from "@/pages/order-success-page";
+import OrderFailPage from "@/pages/order-fail-page";
 import SignUpPage from "@/pages/sign-up-page";
 import SignUpPendingPage from "@/pages/sign-up-pending-page";
 import VerifyEmailPage from "@/pages/verify-email-page";
@@ -42,6 +44,8 @@ export default function RootRoute() {
         {/* 로그인 한 사용자만 */}
         <Route element={<MemberOnlyLayout />}>
           <Route path="/orders" element={<OrderPage />} />
+          <Route path="/order/success" element={<OrderSuccessPage />} />
+          <Route path="/order/fail" element={<OrderFailPage />} />
           <Route path="/my" element={<MyPage />} />
           <Route path="/onboarding" element={<OnboardingPage />} />
         </Route>
