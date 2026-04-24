@@ -39,11 +39,29 @@ export default function ForgotPasswordPage() {
 
         {sent ? (
           <>
-            <p className="mt-4 text-center text-sm text-[#9f8f95]">
+            <p className="mt-4 text-center text-sm leading-relaxed text-[#5c4f55]">
               <span className="font-semibold text-[#f48b94]">{email}</span>로<br />
-              재설정 링크를 보내드렸어요.<br />
-              메일함을 확인해 주세요.
+              재설정 링크를 발송했어요.<br />
+              <span className="text-[#9f8f95]">
+                (링크는 30분 동안 유효해요)
+              </span>
             </p>
+
+            {/* 메일이 안 왔을 때 안내 — 가입 여부를 백엔드가 알려주지 않으므로 사용자가 직접 확인해야 함 */}
+            <div className="mt-5 rounded-2xl border border-[#f4c9cf] bg-[#fff7f8] p-4">
+              <p className="text-sm font-semibold text-[#5c4f55]">
+                메일이 도착하지 않았나요?
+              </p>
+              <ul className="mt-2 space-y-1.5 text-[13px] leading-relaxed text-[#7a6a70]">
+                <li>
+                  · <span className="font-semibold text-[#f48b94]">가입된 이메일</span>이
+                  맞는지 다시 확인해 주세요.
+                </li>
+                <li>· 스팸함 · 프로모션함도 함께 확인해 주세요.</li>
+                <li>· 몇 분 후에도 오지 않으면 다시 전송해 주세요.</li>
+              </ul>
+            </div>
+
             <button
               type="button"
               onClick={() => { setSent(false); setEmail(""); }}
