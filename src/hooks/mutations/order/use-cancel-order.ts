@@ -7,7 +7,11 @@ export function useCancelOrder() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (orderId: number) => cancelOrder(orderId),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: QUERY_KEYS.orders.all }),
+    // 주문 취소 성공 시 재고가 복원되므로 이벤트 캐시도 무효화
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.orders.all });
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.events.all });
+    },
     onError: showErrorToast,
   });
 }
