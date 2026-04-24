@@ -46,3 +46,9 @@ export type EventDetailEntity = {
   endAt: string;
   products: PaginatedResponse<EventProductItem>;
 };
+
+export type LineupRound = {
+  round: number;
+  status: EventStatus;
+  brands: string[];
+};
