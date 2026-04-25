@@ -1,6 +1,10 @@
+import { useState } from "react";
 import { X, Loader2 } from "lucide-react";
 import { useOrderDetailData } from "@/hooks/queries/use-order-detail-data";
 import { useCancelOrder } from "@/hooks/mutations/order/use-cancel-order";
+import { useMeData } from "@/hooks/queries/use-me-data";
+import { requestTossPayment, buildOrderName, isUserCancelError } from "@/lib/toss-payment";
+import { showErrorToast, showInfoToast, showSuccessToast } from "@/lib/toast";
 import type { OrderStatus } from "@/types/order";
 
 interface Props {
@@ -23,14 +27,42 @@ const ORDER_STATUS_STYLE: Record<OrderStatus, string> = {
 export default function OrderDetailSheet({ orderId, onClose }: Props) {
   const isOpen = orderId !== null;
   const { data: order, isLoading } = useOrderDetailData(orderId);
+  const { data: me } = useMeData();
   const cancelOrderMutation = useCancelOrder();
+  const [isPaying, setIsPaying] = useState(false);
 
   if (!isOpen) return null;
 
   async function handleCancel() {
     if (!order) return;
     await cancelOrderMutation.mutateAsync(order.orderId);
+    showSuccessToast("주문이 취소되었어요.");
     onClose();
+  }
+
+  async function handleRetryPayment() {
+    if (!order) return;
+    setIsPaying(true);
+    try {
+      await requestTossPayment({
+        userId: me?.id,
+        orderNumber: order.orderNumber,
+        orderName: buildOrderName(order.items),
+        amount: order.totalPrice,
+        dbOrderId: order.orderId,
+        customerEmail: me?.email,
+        customerName: order.receiverName,
+      });
+    } catch (error) {
+      if (isUserCancelError(error)) {
+        showInfoToast("결제를 취소했어요. 주문 후 15분이 지나면 자동 취소돼요.");
+        setIsPaying(false);
+        return;
+      }
+      console.error("[OrderDetailSheet] 재결제 요청 실패", error);
+      showErrorToast(error);
+      setIsPaying(false);
+    }
   }
 
   return (
@@ -114,15 +146,26 @@ export default function OrderDetailSheet({ orderId, onClose }: Props) {
                 </div>
               </section>
 
-              {/* 주문 취소 (PENDING만) */}
+              {/* 결제 / 취소 (PENDING만) */}
               {order.status === "PENDING" && (
-                <button
-                  onClick={handleCancel}
-                  disabled={cancelOrderMutation.isPending}
-                  className="h-12 w-full rounded-2xl border border-neutral-200 text-sm font-semibold text-neutral-600 transition hover:border-red-200 hover:text-red-500 disabled:opacity-50"
-                >
-                  {cancelOrderMutation.isPending ? "취소 처리 중..." : "주문 취소"}
-                </button>
+                <div className="space-y-2">
+                  <button
+                    onClick={handleRetryPayment}
+                    disabled={isPaying || cancelOrderMutation.isPending}
+                    className="h-12 w-full rounded-2xl bg-[#f48b94] text-sm font-semibold text-white shadow-[0_4px_14px_rgba(244,139,148,0.35)] transition hover:bg-[#ee7b86] disabled:opacity-60"
+                  >
+                    {isPaying
+                      ? "결제창 여는 중..."
+                      : `${order.totalPrice.toLocaleString()}원 결제하기`}
+                  </button>
+                  <button
+                    onClick={handleCancel}
+                    disabled={cancelOrderMutation.isPending || isPaying}
+                    className="h-12 w-full rounded-2xl border border-neutral-200 text-sm font-semibold text-neutral-600 transition hover:border-red-200 hover:text-red-500 disabled:opacity-50"
+                  >
+                    {cancelOrderMutation.isPending ? "취소 처리 중..." : "주문 취소"}
+                  </button>
+                </div>
               )}
             </div>
           )}
