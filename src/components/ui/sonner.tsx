@@ -10,6 +10,8 @@ const Toaster = ({ ...props }: ToasterProps) => {
             "!bg-red-600 !text-white !border-red-700 [&_[data-icon]]:!text-white",
           success:
             "!bg-[#f48b94] !text-white !border-[#ee7b86] [&_[data-icon]]:!text-white",
+          info:
+            "!bg-[#f48b94] !text-white !border-[#ee7b86] [&_[data-icon]]:!text-white",
         },
       }}
       {...props}

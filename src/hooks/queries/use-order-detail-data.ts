@@ -8,5 +8,7 @@ export function useOrderDetailData(orderId: number | null) {
     queryFn: () => getOrderDetail(orderId!),
     enabled: orderId !== null,
     staleTime: Infinity,
+    // 백엔드 TTL로 PENDING이 자동 취소될 수 있으므로, 상세 시트 재오픈 시 항상 최신화
+    refetchOnMount: "always",
   });
 }

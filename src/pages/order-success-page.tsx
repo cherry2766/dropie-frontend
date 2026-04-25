@@ -28,6 +28,16 @@ export default function OrderSuccessPage() {
     });
   }, [paymentKey, amount, dbOrderId, confirmMutation]);
 
+  // 일시적 네트워크 오류 등으로 confirm이 실패했을 때 사용자가 직접 재시도할 수 있게 해줌
+  // (토스에서는 결제 승인된 상태이므로 동일한 paymentKey로 재호출 가능)
+  function handleRetryConfirm() {
+    if (!paymentKey || !amount || !dbOrderId) return;
+    confirmMutation.mutate({
+      orderId: Number(dbOrderId),
+      data: { paymentKey, amount: Number(amount) },
+    });
+  }
+
   if (!paymentKey || !amount || !dbOrderId) {
     return (
       <StateView
@@ -55,11 +65,19 @@ export default function OrderSuccessPage() {
       <StateView
         icon={<AlertCircle className="h-10 w-10 text-red-400" />}
         title="결제 확인에 실패했어요"
-        description={getErrorMessage(confirmMutation.error)}
-        primaryLabel="주문 내역 보기"
-        onPrimary={() => navigate("/my")}
-        secondaryLabel="홈으로"
-        onSecondary={() => navigate("/")}
+        description={
+          <>
+            {getErrorMessage(confirmMutation.error)}
+            <br />
+            <span className="text-xs text-neutral-400">
+              잠시 후 다시 시도해 주세요.
+            </span>
+          </>
+        }
+        primaryLabel="다시 시도"
+        onPrimary={handleRetryConfirm}
+        secondaryLabel="주문 내역 보기"
+        onSecondary={() => navigate("/my")}
       />
     );
   }

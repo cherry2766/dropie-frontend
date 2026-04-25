@@ -1,17 +1,15 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { ChevronLeft, Search, MapPin, ChevronRight } from "lucide-react";
+import { ChevronLeft, Search, MapPin, ChevronRight, Info } from "lucide-react";
 import DaumPostcodeEmbed from "react-daum-postcode";
-import { loadTossPayments, ANONYMOUS } from "@tosspayments/tosspayments-sdk";
 import { useAddressesData } from "@/hooks/queries/use-addresses-data";
 import { useCreateOrder } from "@/hooks/mutations/order/use-create-order";
 import { useMeData } from "@/hooks/queries/use-me-data";
-import { showErrorToast } from "@/lib/toast";
+import { showErrorToast, showInfoToast } from "@/lib/toast";
+import { requestTossPayment, buildOrderName, isUserCancelError } from "@/lib/toss-payment";
 import type { AddressEntity } from "@/types/address";
 
 type OrderItem = { id: number; name: string; imageUrl: string; price: number; quantity: number };
-
-const TOSS_CLIENT_KEY = import.meta.env.VITE_TOSS_CLIENT_KEY as string;
 
 export default function OrderPage() {
   const navigate = useNavigate();
@@ -86,33 +84,23 @@ export default function OrderPage() {
       });
 
       // 2. 토스 결제창 오픈 — 성공 시 successUrl로 redirect
-      const tossPayments = await loadTossPayments(TOSS_CLIENT_KEY);
-      const payment = tossPayments.payment({
-        // 토스 customerKey는 최소 2자 — user id가 한 자리여도 통과하도록 prefix
-        customerKey: me?.id ? `user-${me.id}` : ANONYMOUS,
-      });
-
-      const orderName =
-        orderItems.length === 1
-          ? orderItems[0].name
-          : `${orderItems[0].name} 외 ${orderItems.length - 1}건`;
-
-      // successUrl에 우리 DB orderId를 붙여서 성공 페이지가 confirm API를 호출할 수 있게 함
-      // (토스가 붙여주는 orderId는 orderNumber라서 DB id가 별도로 필요)
-      const successUrl = `${window.location.origin}/order/success?dbOrderId=${order.orderId}`;
-      const failUrl = `${window.location.origin}/order/fail`;
-
-      await payment.requestPayment({
-        method: "CARD",
-        amount: { currency: "KRW", value: totalPrice },
-        orderId: order.orderNumber,
-        orderName,
-        successUrl,
-        failUrl,
+      await requestTossPayment({
+        userId: me?.id,
+        orderNumber: order.orderNumber,
+        orderName: buildOrderName(orderItems),
+        amount: totalPrice,
+        dbOrderId: order.orderId,
         customerEmail: me?.email,
         customerName: form.name,
       });
     } catch (error) {
+      // 사용자가 결제창을 X로 닫은 경우 — 정상 취소이므로 에러 대신 info 톤으로 안내
+      // (결제 진행 중 취소는 failUrl로 redirect되어 여기로 안 옴)
+      if (isUserCancelError(error)) {
+        showInfoToast("결제를 취소했어요. 주문 후 15분이 지나면 자동 취소돼요.");
+        setIsProcessing(false);
+        return;
+      }
       // 토스 SDK 에러는 AxiosError가 아니라 원본을 그대로 콘솔에 남겨야 원인 파악 가능
       console.error("[OrderPage] 결제 요청 실패", error);
       showErrorToast(error);
@@ -271,6 +259,12 @@ export default function OrderPage() {
 
       {/* 하단 버튼 */}
       <div className="fixed bottom-0 left-1/2 z-20 w-full max-w-[540px] -translate-x-1/2 border-t border-neutral-100 bg-white px-4 py-3">
+        <div className="mb-2.5 flex items-center justify-center gap-1.5 rounded-xl bg-[#fff0f3] px-3 py-2">
+          <Info className="h-4 w-4 shrink-0 text-[#f48b94]" />
+          <p className="text-xs font-semibold text-[#d96672]">
+            주문 후 15분 안에 결제를 완료해야 해요
+          </p>
+        </div>
         <button
           onClick={handleOrder}
           disabled={isProcessing}
