@@ -4,6 +4,7 @@ const Toaster = ({ ...props }: ToasterProps) => {
   return (
     <Sonner
       position="top-center"
+      expand
       toastOptions={{
         classNames: {
           error:
