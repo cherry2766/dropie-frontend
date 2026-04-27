@@ -22,6 +22,7 @@ type Tab = "events" | "products";
 const STATUS_STYLE: Record<EventStatus, string> = {
   OPEN: "bg-emerald-50 text-emerald-600",
   UPCOMING: "bg-blue-50 text-blue-600",
+  SOLD_OUT: "bg-orange-50 text-orange-600",
   CLOSED: "bg-[#ffd6e0] text-neutral-500",
   FINISHED: "bg-neutral-100 text-neutral-400",
 };
@@ -260,20 +261,21 @@ export default function AdminPage() {
                 {editingEventId !== null ? "이벤트 수정" : "이벤트 등록"}
               </h2>
               <div className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
+                <div className={editingEventId !== null ? "grid grid-cols-2 gap-4" : ""}>
                   <div>
                     <label className={labelCls}>브랜드명</label>
                     <input value={eventForm.brandName} onChange={(e) => setEventForm((p) => ({ ...p, brandName: e.target.value }))} placeholder="예: 노티드" className={inputCls} />
                   </div>
-                  <div>
-                    <label className={labelCls}>상태</label>
-                    <select value={eventForm.status} onChange={(e) => setEventForm((p) => ({ ...p, status: e.target.value as EventStatus }))} className={inputCls}>
-                      <option value="UPCOMING">UPCOMING</option>
-                      <option value="OPEN">OPEN</option>
-                      <option value="CLOSED">CLOSED</option>
-                      <option value="FINISHED">FINISHED</option>
-                    </select>
-                  </div>
+                  {editingEventId !== null && (
+                    <div>
+                      <label className={labelCls}>상태</label>
+                      <select value={eventForm.status} onChange={(e) => setEventForm((p) => ({ ...p, status: e.target.value as EventStatus }))} className={inputCls}>
+                        <option value="OPEN">OPEN</option>
+                        <option value="CLOSED">CLOSED</option>
+                        <option value="FINISHED">FINISHED</option>
+                      </select>
+                    </div>
+                  )}
                 </div>
                 <div>
                   <label className={labelCls}>브랜드 설명</label>

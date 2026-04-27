@@ -7,6 +7,7 @@ import type { EventStatus } from "@/types/event";
 const STATUS_LABEL: Record<EventStatus, string> = {
   OPEN: "진행중",
   UPCOMING: "오픈 예정",
+  SOLD_OUT: "품절",
   CLOSED: "마감",
   FINISHED: "종료",
 };
@@ -14,6 +15,7 @@ const STATUS_LABEL: Record<EventStatus, string> = {
 const STATUS_STYLE: Record<EventStatus, string> = {
   OPEN: "bg-[#fff0f3] text-[#f48b94]",
   UPCOMING: "bg-blue-50 text-blue-500",
+  SOLD_OUT: "bg-orange-50 text-orange-500",
   CLOSED: "bg-neutral-100 text-neutral-400",
   FINISHED: "bg-neutral-100 text-neutral-400",
 };
