@@ -1,4 +1,4 @@
-export type EventStatus = "UPCOMING" | "OPEN" | "CLOSED" | "FINISHED";
+export type EventStatus = "UPCOMING" | "OPEN" | "SOLD_OUT" | "CLOSED" | "FINISHED";
 
 export type EventEntity = {
   id: number;
