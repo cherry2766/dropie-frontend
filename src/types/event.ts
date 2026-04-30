@@ -59,8 +59,7 @@ export type LineupRound = {
 };
 
 // GET /events/popular 응답 1건의 형태
-// EventListItem과 거의 동일하지만 누적 점수 score가 추가됨
-// (조회 +1점, 결제 완료 +5점이 7일 윈도우로 합산된 값)
+// 백엔드에서 score는 @JsonIgnore로 응답에서 제외되며, 정렬 순서로만 인기도가 표현됨
 export type PopularEventItem = {
   id: number;
   brandName: string;
@@ -68,5 +67,14 @@ export type PopularEventItem = {
   status: EventStatus;
   startAt: string;
   endAt: string;
-  score: number;
+};
+
+// WebSocket으로 받는 재고 변경 메시지
+// 백엔드 StockUpdateMessage record와 1:1 매핑
+// stock은 "차감/복구 후의 절대값" → 그대로 화면에 반영하면 됨
+export type StockUpdateMessage = {
+  eventId: number;
+  productId: number;
+  stock: number;
+  occurredAt: string;
 };

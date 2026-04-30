@@ -2,11 +2,16 @@ import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { ChevronLeft, Clock, Package, Minus, Plus, X } from "lucide-react";
 import { useEventDetailData } from "@/hooks/queries/use-event-detail-data";
+import { useStockSubscription } from "@/hooks/subscriptions/use-stock-subscription"; 
 
 export default function EventDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { data: event, isLoading } = useEventDetailData(Number(id));
+  const eventId = Number(id);
+  const { data: event, isLoading } = useEventDetailData(eventId);
+
+  // 이 페이지가 떠 있는 동안 실시간 stock 구독
+  useStockSubscription(eventId);
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "instant" });
