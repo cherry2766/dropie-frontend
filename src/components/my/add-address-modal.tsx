@@ -149,7 +149,7 @@ export default function AddAddressModal({ isOpen, onClose, isFirstAddress }: Pro
 
       {/* 주소 검색 팝업 */}
       {showPostcode && (
-        <div className="fixed inset-0 z-60 flex items-end justify-center bg-black/40">
+        <div className="fixed inset-0 z-[60] flex items-end justify-center bg-black/40">
           <div className="w-full max-w-[540px] rounded-t-3xl bg-white px-4 pt-5 pb-8">
             <div className="mb-3 flex items-center justify-between">
               <h3 className="text-base font-bold text-neutral-800">주소 검색</h3>
@@ -157,7 +157,11 @@ export default function AddAddressModal({ isOpen, onClose, isFirstAddress }: Pro
                 닫기
               </button>
             </div>
-            <DaumPostcodeEmbed onComplete={handleAddressSelect} />
+            {/* 모바일에서 iframe 높이가 collapse되지 않도록 명시적 크기 지정 */}
+            <DaumPostcodeEmbed
+              onComplete={handleAddressSelect}
+              style={{ width: "100%", height: "450px" }}
+            />
           </div>
         </div>
       )}

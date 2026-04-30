@@ -60,94 +60,94 @@ export default function MainPage() {
           <br />
           선착순 마감으로 조기 종료될 수 있습니다.
         </p>
+      </section>
 
-        {(popularLoading || popularEvents.length > 0) && (
-          <section className="space-y-3 px-1">
-            <h2 className="text-lg font-extrabold text-neutral-900">
-              🔥 지금 뜨는 드롭 TOP10
-            </h2>
-
-            {/* 가로 스크롤 캐러셀 — 모바일에서 자연스럽고 좁은 공간을 효율적으로 사용 */}
-            <div className="-mx-4 flex gap-3 overflow-x-auto px-4 pb-2 [&::-webkit-scrollbar]:hidden">
-              {popularLoading
-                ? Array.from({ length: 4 }).map((_, i) => (
-                    <div
-                      key={i}
-                      className="w-32 shrink-0 animate-pulse space-y-2"
-                    >
-                      <div className="aspect-[3/4] w-full rounded-2xl bg-neutral-200" />
-                      <div className="h-4 w-20 rounded bg-neutral-200" />
-                    </div>
-                  ))
-                : popularEvents.map((event, index) => (
-                    <article
-                      key={event.id}
-                      onClick={() => navigate(`/events/${event.id}`)}
-                      className="w-32 shrink-0 cursor-pointer space-y-2"
-                    >
-                      <div className="relative overflow-hidden rounded-2xl bg-neutral-100">
-                        <img
-                          src={event.thumbnailImageUrl}
-                          alt={event.brandName}
-                          className="aspect-[3/4] w-full object-cover"
-                        />
-                        {/* 순위 뱃지 — 인기 TOP의 시각적 강조 */}
-                        <span className="absolute top-2 left-2 flex h-6 w-6 items-center justify-center rounded-full bg-black/70 text-xs font-bold text-white">
-                          {index + 1}
-                        </span>
-                      </div>
-                      <p className="px-1 text-sm font-bold text-neutral-900">
-                        {event.brandName}
-                      </p>
-                    </article>
-                  ))}
-            </div>
-          </section>
-        )}
-
-        <section className="space-y-3">
+      {(popularLoading || popularEvents.length > 0) && (
+        <section className="space-y-3 border-t border-neutral-100 px-1 pt-6">
           <h2 className="text-lg font-extrabold text-neutral-900">
-            오픈 예정 라인업
+            🔥 지금 뜨는 드롭 TOP10
           </h2>
 
-          {(lineupData ?? []).map((round, index) => {
-            const isHighlighted = index === 1;
-            return (
-              <div
-                key={round.round}
-                className={`flex justify-between rounded-2xl p-4 ${
-                  isHighlighted
-                    ? "bg-[#FFA69E]"
-                    : "border border-neutral-200 bg-white"
-                }`}
-              >
-                <div>
-                  <p
-                    className={`text-base font-bold ${isHighlighted ? "text-neutral-900" : ""}`}
+          {/* 가로 스크롤 캐러셀 — 모바일에서 자연스럽고 좁은 공간을 효율적으로 사용 */}
+          <div className="-mx-4 flex gap-3 overflow-x-auto px-4 pb-2 [&::-webkit-scrollbar]:hidden">
+            {popularLoading
+              ? Array.from({ length: 4 }).map((_, i) => (
+                  <div
+                    key={i}
+                    className="w-32 shrink-0 animate-pulse space-y-2"
                   >
-                    {round.round}차 오픈
-                  </p>
-                </div>
-
-                <div
-                  className={`text-right text-sm font-medium ${isHighlighted ? "" : "text-neutral-800"}`}
-                >
-                  {Array.from(
-                    { length: Math.ceil(round.brands.length / 2) },
-                    (_, i) => (
-                      <p key={i}>
-                        {round.brands[i * 2]}
-                        {round.brands[i * 2 + 1]
-                          ? ` · ${round.brands[i * 2 + 1]}`
-                          : ""}
-                      </p>
-                    ),
-                  )}
-                </div>
-              </div>
-            );
-          })}
+                    <div className="aspect-[3/4] w-full rounded-2xl bg-neutral-200" />
+                    <div className="h-4 w-20 rounded bg-neutral-200" />
+                  </div>
+                ))
+              : popularEvents.map((event, index) => (
+                  <article
+                    key={event.id}
+                    onClick={() => navigate(`/events/${event.id}`)}
+                    className="w-32 shrink-0 cursor-pointer space-y-2"
+                  >
+                    <div className="relative overflow-hidden rounded-2xl bg-neutral-100">
+                      <img
+                        src={event.thumbnailImageUrl}
+                        alt={event.brandName}
+                        className="aspect-[3/4] w-full object-cover"
+                      />
+                      {/* 순위 뱃지 — 인기 TOP의 시각적 강조 */}
+                      <span className="absolute top-2 left-2 flex h-6 w-6 items-center justify-center rounded-full bg-black/70 text-xs font-bold text-white">
+                        {index + 1}
+                      </span>
+                    </div>
+                    <p className="px-1 text-sm font-bold text-neutral-900">
+                      {event.brandName}
+                    </p>
+                  </article>
+                ))}
+          </div>
         </section>
+      )}
+
+      <section className="space-y-3 px-1">
+        <h2 className="text-lg font-extrabold text-neutral-900">
+          오픈 예정 라인업
+        </h2>
+
+        {(lineupData ?? []).map((round, index) => {
+          const isHighlighted = index === 1;
+          return (
+            <div
+              key={round.round}
+              className={`flex justify-between rounded-2xl p-4 ${
+                isHighlighted
+                  ? "bg-[#FFA69E]"
+                  : "border border-neutral-200 bg-white"
+              }`}
+            >
+              <div>
+                <p
+                  className={`text-base font-bold ${isHighlighted ? "text-neutral-900" : ""}`}
+                >
+                  {round.round}차 오픈
+                </p>
+              </div>
+
+              <div
+                className={`text-right text-sm font-medium ${isHighlighted ? "" : "text-neutral-800"}`}
+              >
+                {Array.from(
+                  { length: Math.ceil(round.brands.length / 2) },
+                  (_, i) => (
+                    <p key={i}>
+                      {round.brands[i * 2]}
+                      {round.brands[i * 2 + 1]
+                        ? ` · ${round.brands[i * 2 + 1]}`
+                        : ""}
+                    </p>
+                  ),
+                )}
+              </div>
+            </div>
+          );
+        })}
       </section>
 
       {/* 정보 카드 */}
@@ -158,7 +158,7 @@ export default function MainPage() {
               Today Dessert!
             </h2>
             <p className="mt-1 text-sm text-neutral-500">
-              매일 오후 8시, 한정 수량으로 오픈돼요.
+              오후 8시, 한정 수량으로 오픈돼요.
             </p>
           </div>
 
