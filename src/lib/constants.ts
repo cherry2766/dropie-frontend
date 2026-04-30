@@ -8,9 +8,12 @@ export const QUERY_KEYS = {
   events: {
     all: ["events"],
     list: (page: number, size: number, status?: string) =>
-      status ? ["events", "list", page, size, status] : ["events", "list", page, size],
+      status
+        ? ["events", "list", page, size, status]
+        : ["events", "list", page, size],
     detail: (id: number) => ["events", "detail", id],
     lineup: ["events", "lineup"],
+    popular: ["events", "popular"],
   },
   tags: {
     all: ["tags"],
