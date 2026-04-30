@@ -1,5 +1,11 @@
 import api from "@/lib/api";
-import type { EventListItem, EventDetailEntity, LineupRound, PaginatedResponse } from "@/types/event";
+import type {
+  EventListItem,
+  EventDetailEntity,
+  LineupRound,
+  PaginatedResponse,
+  PopularEventItem,
+} from "@/types/event";
 
 export async function getEvents(
   page = 1,
@@ -17,7 +23,14 @@ export async function getEventLineup(): Promise<LineupRound[]> {
   return res.data;
 }
 
-export async function getEventDetail(eventId: number): Promise<EventDetailEntity> {
+export async function getEventDetail(
+  eventId: number,
+): Promise<EventDetailEntity> {
   const res = await api.get<EventDetailEntity>(`/events/${eventId}`);
+  return res.data;
+}
+
+export async function getPopularEvents(): Promise<PopularEventItem[]> {
+  const res = await api.get<PopularEventItem[]>("/events/popular");
   return res.data;
 }
