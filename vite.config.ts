@@ -11,4 +11,8 @@ export default defineConfig({
       '@': path.resolve(__dirname, './src'),
     },
   },
+  // sockjs-client가 Node 전역 변수 `global`을 참조하므로 브라우저용 `globalThis`로 매핑
+  define: {
+    global: 'globalThis',
+  },
 });
