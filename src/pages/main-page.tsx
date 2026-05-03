@@ -4,6 +4,7 @@ import { useEventsData } from "@/hooks/queries/use-events-data";
 import { useEventLineupData } from "@/hooks/queries/use-event-lineup-data";
 import type { EventStatus } from "@/types/event";
 import { usePopularEventsData } from "@/hooks/queries/use-popular-events-data";
+import RecommendationSection from "@/components/main/recommendation-section";
 
 const STATUS_LABEL: Record<EventStatus, string> = {
   OPEN: "진행중",
@@ -61,6 +62,8 @@ export default function MainPage() {
           선착순 마감으로 조기 종료될 수 있습니다.
         </p>
       </section>
+
+      <RecommendationSection />
 
       {(popularLoading || popularEvents.length > 0) && (
         <section className="space-y-3 border-t border-neutral-100 px-1 pt-6">

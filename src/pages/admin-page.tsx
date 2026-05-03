@@ -15,6 +15,7 @@ import { useUpdateProduct } from "@/hooks/mutations/admin/use-update-product";
 import { useUpdateProductStock } from "@/hooks/mutations/admin/use-update-product-stock";
 import { useDeleteProduct } from "@/hooks/mutations/admin/use-delete-product";
 import { showSuccessToast, showInfoToast } from "@/lib/toast";
+import TagInput from "@/components/admin/tag-input";
 
 // Tab은 이 페이지 내부에서만 쓰는 UI 상태이므로 여기에 정의
 type Tab = "events" | "products";
@@ -25,6 +26,22 @@ const STATUS_STYLE: Record<EventStatus, string> = {
   SOLD_OUT: "bg-orange-50 text-orange-600",
   CLOSED: "bg-[#ffd6e0] text-neutral-500",
   FINISHED: "bg-neutral-100 text-neutral-400",
+};
+
+// 필터 드롭다운 — optgroup label과 option 배경색 (네이티브 select는 className 미지원이라 inline style로 지정)
+const STATUS_LABEL: Record<EventStatus, string> = {
+  UPCOMING: "오픈 예정",
+  OPEN: "진행 중",
+  SOLD_OUT: "품절",
+  CLOSED: "마감",
+  FINISHED: "종료",
+};
+const STATUS_OPTION_BG: Record<EventStatus, string> = {
+  UPCOMING: "#eff6ff",
+  OPEN: "#ecfdf5",
+  SOLD_OUT: "#fff7ed",
+  CLOSED: "#ffe4ec",
+  FINISHED: "#f5f5f5",
 };
 
 const EVENT_FORM_INIT = { brandName: "", description: "", thumbnailImageUrl: "", imageUrl: "", startAt: "", endAt: "", status: "UPCOMING" as EventStatus };
@@ -48,6 +65,8 @@ export default function AdminPage() {
 
   // 상품
   const [productForm, setProductForm] = useState(PRODUCT_FORM_INIT);
+  // tagNames는 # 미포함 raw 이름 배열. 폼 상태와 별도로 관리하여 폼 리셋 시 같이 초기화
+  const [productTagNames, setProductTagNames] = useState<string[]>([]);
   const [editingProductId, setEditingProductId] = useState<number | null>(null);
   const [editingStockId, setEditingStockId] = useState<number | null>(null);
   const [stockValue, setStockValue] = useState("");
@@ -161,6 +180,8 @@ export default function AdminPage() {
             imageUrl: productForm.imageUrl,
             description: productForm.description,
             price: Number(productForm.price),
+            // 폼의 현재 선택값을 통째로 보내면 백엔드가 replace 처리 (스펙 권장)
+            tagNames: productTagNames,
           },
         });
         await updateProductStockMutation.mutateAsync({
@@ -177,10 +198,12 @@ export default function AdminPage() {
           description: productForm.description,
           price: Number(productForm.price),
           stock: Number(productForm.stock),
+          tagNames: productTagNames,
         });
         showSuccessToast("상품이 등록되었습니다.");
       }
       setProductForm(PRODUCT_FORM_INIT);
+      setProductTagNames([]);
       productImageUpload.reset();
     } catch {
       // 에러는 mutation의 onError에서 toast 처리
@@ -190,6 +213,8 @@ export default function AdminPage() {
   function handleEditProduct(product: Product) {
     setEditingProductId(product.id);
     setProductForm({ eventId: String(product.eventId), name: product.name, imageUrl: product.imageUrl, description: product.description, price: String(product.price), stock: String(product.stock) });
+    // 응답의 tag.name엔 # prefix가 붙어있으므로 raw로 변환해서 폼 상태에 주입
+    setProductTagNames(product.tags.map((t) => t.name.replace(/^#/, "")));
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
@@ -473,10 +498,14 @@ export default function AdminPage() {
                     </div>
                   </div>
                 </div>
+                <div>
+                  <label className={labelCls}>태그</label>
+                  <TagInput value={productTagNames} onChange={setProductTagNames} />
+                </div>
                 <div className="flex justify-end gap-2">
                   {editingProductId !== null && (
                     <button
-                      onClick={() => { setEditingProductId(null); setProductForm(PRODUCT_FORM_INIT); productImageUpload.reset(); }}
+                      onClick={() => { setEditingProductId(null); setProductForm(PRODUCT_FORM_INIT); setProductTagNames([]); productImageUpload.reset(); }}
                       className="h-10 rounded-xl border border-neutral-200 px-5 text-sm font-semibold text-neutral-500 hover:bg-neutral-50"
                     >
                       취소
@@ -503,9 +532,21 @@ export default function AdminPage() {
                   className="h-9 rounded-xl border border-neutral-200 bg-neutral-50 px-3 text-sm text-neutral-700 outline-none focus:border-[#f48b94] focus:ring-1 focus:ring-[#f48b94]"
                 >
                   <option value="">전체 이벤트</option>
-                  {events.map((e) => (
-                    <option key={e.id} value={e.id}>{e.brandName}</option>
-                  ))}
+                  {(["UPCOMING", "OPEN", "SOLD_OUT", "CLOSED", "FINISHED"] as EventStatus[]).flatMap((status, groupIdx, arr) => {
+                    const grouped = events.filter((e) => e.status === status);
+                    if (grouped.length === 0) return [];
+                    const isLast = groupIdx === arr.length - 1;
+                    return [
+                      <optgroup key={status} label={STATUS_LABEL[status]}>
+                        {grouped.map((e) => (
+                          <option key={e.id} value={e.id} style={{ backgroundColor: STATUS_OPTION_BG[status] }}>
+                            {e.brandName}
+                          </option>
+                        ))}
+                      </optgroup>,
+                      ...(isLast ? [] : [<option key={`sep-${status}`} disabled style={{ color: "#d4d4d4" }}>──────────</option>]),
+                    ];
+                  })}
                 </select>
               </div>
               <div className="overflow-x-auto">
@@ -523,7 +564,21 @@ export default function AdminPage() {
                     {(filterEventId ? products.filter((p) => p.eventId === Number(filterEventId)) : products).map((product) => {
                       return (
                         <tr key={product.id}>
-                          <td className="py-3 pr-4 font-semibold text-neutral-800">{product.name}</td>
+                          <td className="py-3 pr-4 font-semibold text-neutral-800">
+                            <div>{product.name}</div>
+                            {product.tags.length > 0 && (
+                              <div className="mt-1 flex flex-wrap gap-1">
+                                {product.tags.map((tag) => (
+                                  <span
+                                    key={tag.id}
+                                    className="rounded-full bg-neutral-100 px-2 py-0.5 text-[10px] font-medium text-neutral-500"
+                                  >
+                                    {tag.name}
+                                  </span>
+                                ))}
+                              </div>
+                            )}
+                          </td>
                           <td className="py-3 pr-4">
                             <span className="rounded-full bg-[#ffd6e0] px-2.5 py-0.5 text-xs font-semibold text-[#f48b94]">
                               {product.eventBrandName}

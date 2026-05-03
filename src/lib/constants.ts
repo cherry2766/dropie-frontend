@@ -29,5 +29,12 @@ export const QUERY_KEYS = {
     products: {
       all: ["admin", "products"],
     },
+    tags: {
+      all: ["admin", "tags"],
+      search: (keyword: string) => ["admin", "tags", "search", keyword],
+    },
+  },
+  recommendations: {
+    me: ["recommendations", "me"],
   },
 } as const;
