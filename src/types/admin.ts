@@ -1,4 +1,5 @@
 import type { EventStatus } from "@/types/event";
+import type { TagEntity } from "@/types/tag";
 
 export type GetPresignedUrlRequest = {
   fileName: string;
@@ -62,6 +63,7 @@ export type AdminProductItem = {
   description: string;
   price: number;
   stock: number;
+  tags: TagEntity[];
 };
 
 // ── Product ────────────────────────────────────────────────────────────────
@@ -73,12 +75,15 @@ export type CreateProductRequest = {
   description: string;
   price: number;
   stock: number;
+  // 옵셔널. # 없는 raw 이름 배열. 빈 배열·null 허용
+  tagNames?: string[] | null;
 };
 
 export type CreateProductResponse = {
   id: number;
   name: string;
   stock: number;
+  tags: TagEntity[];
 };
 
 export type UpdateProductRequest = {
@@ -87,12 +92,15 @@ export type UpdateProductRequest = {
   description?: string;
   price?: number;
   stock?: number;
+  // null/미포함 = 변경 없음, [] = 모두 제거, [...] = 통째로 교체
+  tagNames?: string[] | null;
 };
 
 export type UpdateProductResponse = {
   id: number;
   name: string;
   price: number;
+  tags: TagEntity[];
 };
 
 export type UpdateProductStockRequest = {

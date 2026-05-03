@@ -1,3 +1,5 @@
+import type { TagEntity } from "@/types/tag";
+
 export type ProductEntity = {
   id: number;
   eventId: number;
@@ -6,4 +8,5 @@ export type ProductEntity = {
   description: string;
   price: number;
   stock: number;
+  tags: TagEntity[];
 };
