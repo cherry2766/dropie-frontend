@@ -49,7 +49,7 @@ export default function RecommendationSection() {
           <article
             key={item.eventId}
             onClick={() => navigate(`/events/${item.eventId}`)}
-            className="w-64 shrink-0 cursor-pointer overflow-hidden rounded-2xl border border-neutral-100 bg-white shadow-sm transition hover:shadow-md"
+            className="flex w-64 shrink-0 cursor-pointer flex-col overflow-hidden rounded-2xl border border-neutral-100 bg-white shadow-sm transition hover:shadow-md"
           >
             <div className="overflow-hidden bg-neutral-100">
               <img
@@ -58,16 +58,19 @@ export default function RecommendationSection() {
                 className="aspect-[4/3] w-full object-cover"
               />
             </div>
-            <div className="space-y-2 p-3">
+            {/* flex-1 + flex-col — 부모 캐러셀의 items-stretch로 카드 높이가 통일된 뒤,
+                가격 줄을 mt-auto로 카드 하단에 고정해 카드 간 정렬을 맞춤 */}
+            <div className="flex flex-1 flex-col space-y-2 p-3">
               <p className="text-sm font-bold text-neutral-900">{item.brandName}</p>
 
               {/* AI 생성 문구임을 어필 — 인용 스타일 + ✨ 아이콘 */}
-              <p className="flex gap-1 rounded-lg bg-[#fff0f3] px-2 py-1.5 text-xs leading-snug text-neutral-700">
+              {/* flex-1 — 카드 높이가 통일된 상태에서 분홍 박스가 남는 세로 공간을 모두 차지 → 카드 간 박스 높이 동일 */}
+              <p className="flex flex-1 gap-1 rounded-lg bg-[#fff0f3] px-2 py-1.5 text-xs leading-snug text-neutral-700">
                 <Sparkles className="mt-0.5 h-3 w-3 shrink-0 text-[#f48b94]" />
                 <span>{item.message}</span>
               </p>
 
-              <div className="flex items-center justify-between pt-1">
+              <div className="mt-auto flex items-center justify-between pt-1">
                 <span className="truncate text-xs text-neutral-500">{item.productName}</span>
                 <span className="ml-2 shrink-0 text-xs font-semibold text-neutral-800">
                   {item.productPrice.toLocaleString()}원

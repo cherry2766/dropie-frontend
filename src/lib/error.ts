@@ -12,6 +12,7 @@ export const ERROR_MESSAGE_MAP = {
   USER_NOT_FOUND: "존재하지 않는 사용자입니다.",
   DUPLICATE_EMAIL: "이미 사용 중인 이메일입니다.",
   DUPLICATE_NICKNAME: "이미 사용 중인 닉네임입니다.",
+  RECENTLY_WITHDRAWN_EMAIL: "최근 탈퇴한 계정입니다. 30일 후 재가입 가능합니다.",
 
   EVENT_NOT_FOUND: "존재하지 않는 이벤트입니다.",
   EVENT_NOT_STARTED: "아직 판매 시작 전입니다.",
