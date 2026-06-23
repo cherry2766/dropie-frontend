@@ -1,7 +1,24 @@
+import { useState } from "react";
 import { Mail, Lock } from "lucide-react";
 import { Link } from "react-router-dom";
+import { toast } from "sonner";
+import { useLoginWithPassword } from "@/hooks/mutations/auth/use-login-with-password";
+import { Spinner } from "@/components/ui/spinner";
 
 export default function LoginPage() {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+
+  const { mutate: login, isPending } = useLoginWithPassword();
+
+  function handleSubmit() {
+    if (!email.trim() || !password.trim()) {
+      toast.error("이메일과 비밀번호를 입력해주세요.");
+      return;
+    }
+    login({ email, password });
+  }
+
   return (
     <div className="px-4 pt-8 pb-10">
       <div className="mx-auto w-full max-w-[420px] rounded-[32px] bg-white px-8 py-8 shadow-[0_8px_30px_rgba(0,0,0,0.08)]">
@@ -10,9 +27,7 @@ export default function LoginPage() {
           <h1 className="text-[28px] font-extrabold tracking-[-0.02em] text-[#f48b94]">
             Droppie
           </h1>
-          <p className="mt-1 text-sm text-[#9f8f95]">
-            지금 인기 디저트를 확인해보세요
-          </p>
+          <p className="mt-1 text-sm text-[#9f8f95]">지금 인기 디저트를 확인해보세요</p>
         </div>
 
         {/* 타이틀 */}
@@ -27,6 +42,8 @@ export default function LoginPage() {
             <input
               type="email"
               placeholder="이메일"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
               className="w-full bg-transparent text-[15px] text-[#5c4f55] outline-none placeholder:text-[#c6b7bc]"
             />
           </div>
@@ -39,32 +56,39 @@ export default function LoginPage() {
             <input
               type="password"
               placeholder="비밀번호"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && handleSubmit()}
               className="w-full bg-transparent text-[15px] text-[#5c4f55] outline-none placeholder:text-[#c6b7bc]"
             />
-            <button
-              type="button"
-              className="ml-3 shrink-0 text-sm font-medium text-[#d98997] hover:text-[#c96c7d]"
-            >
-              찾기
-            </button>
           </div>
+        </div>
+
+        {/* 비밀번호 찾기 */}
+        <div className="mb-4 text-right">
+          <Link to="/forgot-password" className="text-sm text-[#d98997] hover:text-[#c96c7d]">
+            비밀번호를 잊으셨나요?
+          </Link>
         </div>
 
         {/* 로그인 버튼 */}
         <button
           type="button"
-          className="mt-5 h-14 w-full rounded-2xl bg-[#f48b94] text-base font-semibold text-white shadow-[0_8px_20px_rgba(244,139,148,0.35)] transition hover:bg-[#ee7b86]"
+          onClick={handleSubmit}
+          disabled={isPending}
+          className="h-14 w-full rounded-2xl bg-[#f48b94] text-base font-semibold text-white shadow-[0_8px_20px_rgba(244,139,148,0.35)] transition hover:bg-[#ee7b86] disabled:opacity-60"
         >
-          로그인
+          {isPending ? (
+            <Spinner className="h-4 w-4 border-white/40 border-t-white" />
+          ) : (
+            "로그인"
+          )}
         </button>
 
         {/* 회원가입 */}
         <p className="mt-5 text-center text-sm text-[#8f7f85]">
           아직 계정이 없으신가요?{" "}
-          <Link
-            to="/sign-up"
-            className="font-semibold text-[#f48b94] hover:text-[#eb7481]"
-          >
+          <Link to="/sign-up" className="font-semibold text-[#f48b94] hover:text-[#eb7481]">
             회원가입
           </Link>
         </p>

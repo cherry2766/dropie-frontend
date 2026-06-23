@@ -1,0 +1,18 @@
+<svg width="100%" viewBox="0 0 680 286.72" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="textGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#c9a0b8"/>
+      <stop offset="100%" style="stop-color:#d4768a"/>
+    </linearGradient>
+    <linearGradient id="heartGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#c9a0b8"/>
+      <stop offset="100%" style="stop-color:#d4768a"/>
+    </linearGradient>
+  </defs>
+
+  <g transform="translate(513, 42)" style="fill:rgb(0, 0, 0);stroke:none;color:rgb(255, 255, 255);stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;opacity:1;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto">
+    <path d="M0,-10 C3,-18 14,-18 14,-8 C14,0 0,12 0,12 C0,12 -14,0 -14,-8 C-14,-18 -3,-18 0,-10 Z" fill="url(#heartGrad)" opacity="0.85" style="stroke:none;color:rgb(255, 255, 255);stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;opacity:0.85;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto"/>
+  </g>
+
+  <text font-family="Georgia, 'Times New Roman', serif" font-size="178" font-weight="900" font-style="italic" fill="url(#textGrad)" x="50" y="238" letter-spacing="-4" opacity="0.92" style="stroke:none;color:rgb(255, 255, 255);stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;opacity:0.92;font-family:Georgia, &quot;Times New Roman&quot;, serif;font-size:178px;font-weight:900;font-style:italic;text-anchor:start;dominant-baseline:auto">Dropie</text>
+</svg>
